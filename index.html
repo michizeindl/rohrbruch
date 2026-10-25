@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E63B5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rohrbruch">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Rohrbruch – Muster Haustechnik</title>
+<!-- Startseite „Heizungsverteiler“ (Phase 4, MZ 24.10.2026: Layout 3). App-Icon Variante 2 (gebrochenes o mit Firmenzeichen),
+     Intro „Das Rohr gibt nach“, Musik der Sammlung. Aufbau: start/start.css, start/start.js, start/intro.js -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="schrift/barlow.css">
+<link rel="stylesheet" href="start/start.css">
+<!-- Kundendaten früh laden: Intro und Farben brauchen sie vor dem ersten Bild -->
+<script src="kunde/kunde.js"></script>
+<script>
+// Kundenfarbe sofort setzen; Intro nur beim ersten Öffnen in dieser Sitzung (Testhilfe #intro, Standbild #intro=1.4)
+(function () {
+  var K = window.KUNDE || {}, f = K.farben || {}, d = document.documentElement, gesehen = false;
+  d.style.setProperty('--haupt', f.haupt || '#1E63B5');
+  d.style.setProperty('--dunkel', f.dunkel || '#0f2f57');
+  if (f.haupt) document.querySelector('meta[name="theme-color"]').setAttribute('content', f.haupt);
+  try { gesehen = sessionStorage.getItem('mg:intro:rohrbruch:' + (K.firma || '')) === '1'; } catch (e) { /* privat */ }
+  if (/(?:^#|&)intro(?![a-z])/.test(location.hash) || !gesehen) d.classList.add('intro');
+})();
+</script>
+</head>
+<body>
+<div class="seite" id="seite">
+  <header class="kopf">
+    <div class="logo ein" id="logo" role="img"></div>
+    <button class="ton ein" id="tonKnopf" type="button" aria-label="Ton an/aus"></button>
+  </header>
+  <section class="titel">
+    <h1 class="schriftzug ein" id="schriftzug" aria-label="Rohrbruch!"></h1>
+    <p class="gesamt ein">Gesamt-Bestwert: <b id="gesamt">0</b>/3.000 Punkte</p>
+  </section>
+  <section class="verteiler" id="verteiler">
+    <svg class="rohre ein" id="rohre" aria-hidden="true"></svg>
+    <nav class="stufen" id="stufen" aria-label="Stufe wählen"></nav>
+  </section>
+  <!-- Einsatzbuch-Ansicht im Spielordner (#buch), „Zum Menü“ führt hierher zurück -->
+  <a class="buch ein" id="buchKnopf" href="shk-adventure/#buch">
+    <svg class="buch-zeichen" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v16H7.5A1.5 1.5 0 0 0 6 19.5 1.5 1.5 0 0 0 7.5 21H19v1H7.5A2.5 2.5 0 0 1 5 19.5z"/><path d="M9 6h7v1.6H9zM9 9h5v1.6H9z" fill="var(--haupt)"/></svg>
+    <span>Einsatzbuch</span><b><span id="buch">0</span>/100</b>
+  </a>
+  <footer class="fuss ein" id="fuss"></footer>
+</div>
+<script src="schrift/schriftzug.js"></script>
+<script src="start/start.js"></script>
+<script src="start/intro.js"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>

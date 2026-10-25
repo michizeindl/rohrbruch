@@ -1,0 +1,852 @@
+/* Rohrbruch (Baukasten A1 SHK) – eigene Optik der Sammlung: Spielfläche, Leiste, Szenen, Handgriffe,
+   Start-/Endbild „Heizungs-Display“. Wird nach rahmen.css geladen; rahmen.css bleibt unverändert. */
+
+/* Hausschrift der Musterfirma: Barlow (SIL OFL), Schriftdateien auf Sammlungsebene ../schrift/barlow.css (Phase 4).
+   Für Überschriften, Knöpfe und Display-Texte; Fließtexte bleiben in der Systemschrift. */
+:root {
+  --schrift-kopf: 'Barlow', 'Bahnschrift', 'Segoe UI', system-ui, sans-serif;
+  --text: #1b2430; --leise: #5b6673; --flaeche: #ffffff; --wand: #e4e0d8;
+  --gut: #2e7d32; --falsch: #c0392b;
+}
+html.stil-rohrbruch, html.stil-rohrbruch body { background: var(--wand); }
+#anzeige { z-index: 30; color: #fff; }
+.schirm { z-index: 40; }
+#rb { z-index: 10; }
+
+/* ---------- Spielfläche ---------- */
+#rb { position: fixed; inset: 0; padding-top: 52px; color: var(--text);
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--haupt) 55%, #0b1a2c), #0b1a2c); }
+#rb[hidden] { display: none; }
+.rb-buehne { height: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 4px 6px 8px; }
+#rb.quer .rb-buehne { flex-direction: row; justify-content: center; align-items: flex-start; padding-top: 4px; }
+.rb-raum { position: relative; z-index: 2; flex: none; width: var(--raum); height: var(--raum); border-radius: 12px;
+  box-shadow: 0 8px 26px rgba(0,0,0,.45); background: #222; }
+/* kein overflow:hidden am Raum: die Nahansicht darf bei Bedarf über die Leiste hinausragen (spiel.js nahPlatz) */
+.rb-raumbild { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+.rb-effekte { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.rb-aufkleber { position: absolute; display: grid; place-items: center; padding: .4%; border-radius: 3px; background: rgba(255,255,255,.92);
+  box-shadow: 0 1px 2px rgba(0,0,0,.25); pointer-events: none; }
+.rb-aufkleber[hidden] { display: none; }
+.rb-aufkleber img { width: 100%; height: 100%; object-fit: contain; }
+.rb-marken { position: absolute; inset: 0; }
+/* Marken im Raum (MZ, 25.10.2026, Variante 2): einheitliche Bildsprache – Zeichen im abgerundeten Quadrat mit Ring.
+   Lupe = untersuchen (Ring in Hausfarbe), Hand = suchen (Verstecke der Werkzeugsuche, Ring in der Akzentfarbe).
+   Untersuchte Stellen: Zeichen blass + Haken-Plakette. Gruppen eng liegender Stellen: zwei leicht versetzte Zeichen, ohne Ziffer. */
+:root { --hand: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Crect x='7.3' y='5.2' width='2.8' height='9' rx='1.4'/%3E%3Crect x='10.5' y='3.2' width='2.8' height='11' rx='1.4'/%3E%3Crect x='13.7' y='4' width='2.8' height='10' rx='1.4'/%3E%3Crect x='16.9' y='6.6' width='2.6' height='8' rx='1.3'/%3E%3Cpath d='M7.3 12.5h12.2v3.6c0 3.7-2.7 6.4-6.2 6.4h-1.2c-2 0-3.4-.8-4.6-2.3l-4.2-5.2a1.5 1.5 0 0 1 2.2-2l2.1 2.1z'/%3E%3C/svg%3E");
+  --lupe: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-linecap='round'%3E%3Ccircle cx='9.8' cy='9.8' r='6' stroke-width='2.6' fill='rgba(255,255,255,.18)'/%3E%3Cpath d='M14.4 14.4l6 6' stroke-width='3.6'/%3E%3C/svg%3E");
+  --ring: var(--haupt); --zeichen: var(--lupe); }
+.rb-marke { position: absolute; transform: translate(-50%, -50%); width: max(32px, calc(var(--raum) * .072)); aspect-ratio: 1; padding: 0;
+  border-radius: 28%; border: 3px solid #fff; background: color-mix(in srgb, var(--dunkel) 62%, transparent); cursor: pointer;
+  box-shadow: 0 0 0 2px var(--ring), 0 2px 8px rgba(0,0,0,.5); animation: rbMarkeRein .45s ease-out both, rbPuls 2.4s .6s ease-in-out infinite; }
+.rb-marke.versteck { --ring: var(--akzent); --zeichen: var(--hand); }
+.rb-marke::after { content: ""; position: absolute; inset: 15%; background: var(--zeichen) center / contain no-repeat;
+  filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.6)); pointer-events: none; }
+.rb-marke:hover { background: color-mix(in srgb, var(--dunkel) 82%, transparent); }
+.rb-marke:active { transform: translate(-50%, -50%) scale(.9); }
+/* erledigt: blass, mit Haken-Plakette oben rechts (Stellen) bzw. nur blass (Verstecke) */
+.rb-marke.erledigt { animation: rbMarkeRein .3s ease-out both; background: rgba(40,44,50,.42); box-shadow: 0 0 0 2px rgba(0,0,0,.25); border-color: rgba(255,255,255,.7); }
+.rb-marke.erledigt::after { opacity: .5; }
+.rb-marke.stelle.erledigt::before, .rb-marke.gruppe.erledigt::before { content: "✓"; position: absolute; right: -9px; top: -9px; z-index: 2;
+  width: 52%; min-width: 17px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: var(--gut); color: #fff;
+  border: 2px solid #fff; font: 900 max(10px, calc(var(--raum) * .026)) / 1 system-ui, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,.45);
+  animation: rbHaken .35s ease-out both; }
+.rb-marke.versteck.gruppe.erledigt::before { content: none; }
+@keyframes rbHaken { from { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.15); } }
+/* Gruppe: der Knopf selbst ist unsichtbar, zwei versetzte Zeichen (Kacheln) darin; die vordere pulsiert */
+.rb-marke.gruppe { background: none; border: 0; box-shadow: none; animation: rbMarkeRein .45s ease-out both; }
+.rb-marke.gruppe::after { content: none; }
+.rb-marke .kachel { position: absolute; width: 80%; aspect-ratio: 1; border-radius: 28%; border: 2.5px solid #fff; pointer-events: none;
+  background: color-mix(in srgb, var(--dunkel) 70%, transparent); box-shadow: 0 0 0 2px var(--ring), 0 2px 6px rgba(0,0,0,.5); }
+.rb-marke .kachel::after { content: ""; position: absolute; inset: 15%; background: var(--zeichen) center / contain no-repeat;
+  filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.6)); }
+.rb-marke .kachel.hinten { left: -6%; top: -6%; }
+.rb-marke .kachel.vorn { left: 26%; top: 26%; animation: rbPuls 2.4s .6s ease-in-out infinite; }
+.rb-marke.gruppe:hover .kachel { background: color-mix(in srgb, var(--dunkel) 88%, transparent); }
+.rb-marke.gruppe.teil .kachel.hinten, .rb-marke.gruppe.erledigt .kachel { background: rgba(40,44,50,.5); box-shadow: 0 0 0 2px rgba(0,0,0,.25); border-color: rgba(255,255,255,.7); animation: none; }
+.rb-marke.gruppe.teil .kachel.hinten::after, .rb-marke.gruppe.erledigt .kachel::after { opacity: .5; }
+@keyframes rbPuls { 50% { box-shadow: 0 0 0 2px var(--ring), 0 0 0 9px color-mix(in srgb, var(--ring) 28%, transparent), 0 2px 8px rgba(0,0,0,.5); } }
+html.rb-ruhig .rb-marke, html.rb-ruhig .rb-marke .kachel { animation: none !important; }
+.rb-marke.raster span { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); white-space: nowrap; font-size: 10px;
+  background: rgba(0,0,0,.75); color: #fff; padding: 1px 4px; border-radius: 3px; }
+.rb-marke.raster.versteck { border-color: #ffd54f; }
+@keyframes rbMarkeRein { from { opacity: 0; transform: translate(-50%, -50%) scale(.4); } }
+
+/* Nahansicht über dem Raum: Lupe, Ursache, Koffer, Handgriff */
+.rb-nah { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; overflow-y: auto;
+  border-radius: 12px; background: rgba(246,245,241,.98); animation: rbAuf .25s ease-out both; }
+.rb-nah[hidden] { display: none !important; }   /* auch gegen .diagnose.breit/.handgriff.breit (display: grid) */
+/* hochkant, Ursache: wächst nach unten über die Leiste, bis alles sichtbar ist (max-height setzt spiel.js) */
+.rb-nah.lang { right: auto; bottom: auto; width: 100%; height: auto; min-height: 100%; background: #f6f5f1; box-shadow: 0 10px 28px rgba(0,0,0,.4); }
+/* flach quer: über Raum und Leiste (Breite/Höhe setzt spiel.js), zweispaltig */
+.rb-nah.breit { right: auto; bottom: auto; background: #f6f5f1; box-shadow: 0 10px 28px rgba(0,0,0,.4); }
+.rb-diagnotizen { display: none; }
+.rb-nah.diagnose.breit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 36%); grid-template-rows: auto auto auto 1fr;
+  grid-template-areas: "kopf kopf" "frage notizen" "optionen notizen" "rueck notizen"; column-gap: 14px; row-gap: 6px; }
+.rb-nah.diagnose.breit .rb-nahkopf { grid-area: kopf; }
+.rb-nah.diagnose.breit .rb-diagfrage { grid-area: frage; }
+.rb-nah.diagnose.breit .rb-optionen { grid-area: optionen; grid-template-columns: 1fr 1fr; gap: 6px; }
+.rb-nah.diagnose.breit .rb-rueck { grid-area: rueck; align-self: start; }
+.rb-nah.diagnose.breit .rb-diagnotizen { grid-area: notizen; display: block; contain: size; overflow-y: auto; padding-left: 12px; border-left: 1px solid #dcdcd6; }
+.rb-diagnotizen li { cursor: default; }
+.rb-nah.diagnose.breit .rb-knopf.option { padding: 7px 10px; font-size: 14px; }
+/* sehr kleine Handys quer: keine Notiz-Spalte, die Antworten brauchen die Breite */
+.rb-nah.diagnose.breit.eng { grid-template-columns: minmax(0, 1fr); grid-template-areas: "kopf" "frage" "optionen" "rueck"; }
+.rb-nah.diagnose.breit.eng .rb-diagnotizen { display: none; }
+.rb-nah.handgriff.breit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 46%); grid-template-rows: auto auto auto auto auto auto auto 1fr;
+  grid-template-areas: "kopf kopf" "bild hinweis" "bild notiz" "bild schritte" "bild anweisung" "bild meldung" "bild knoepfe" "bild ."; column-gap: 14px; row-gap: 7px; }
+.rb-nah.handgriff.breit .rb-hganweisung { grid-area: anweisung; }
+.rb-nah.handgriff.breit .rb-hgflaeche { display: contents; }
+.rb-nah.handgriff.breit .rb-nahkopf { grid-area: kopf; }
+.rb-nah.handgriff.breit .rb-hghinweis { grid-area: hinweis; }
+.rb-nah.handgriff.breit .hg-notiz { grid-area: notiz; }
+.rb-nah.handgriff.breit .hg-bild, .rb-nah.handgriff.breit .hg-lcd { grid-area: bild; contain: size; align-self: stretch; justify-self: stretch;
+  width: 100%; height: 100%; min-height: 0; }
+.rb-nah.handgriff.breit .hg-schritte { grid-area: schritte; }
+.rb-nah.handgriff.breit .hg-knoepfe { grid-area: knoepfe; }
+.rb-nah.handgriff.breit .rb-hgmeldung { grid-area: meldung; }
+.rb-nahkopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; }
+.rb-nahkopf b { font-family: var(--schrift-kopf); font-size: 18px; color: var(--dunkel); line-height: 1.15; }
+.rb-zu { width: 36px; height: 36px; flex: none; border-radius: 50%; border: 0; background: rgba(0,0,0,.08); font-size: 16px; cursor: pointer; color: var(--text); }
+/* ✕ ist zugleich .rb-knopf: dessen Innenabstand schob das Zeichen auf flachen Bildschirmen (30 px) halb aus dem Knopf */
+.rb-knopf.rb-zu { padding: 0; display: grid; place-items: center; line-height: 1; }
+.rb-lupenbild { flex: 1 1 auto; min-height: 120px; width: 100%; }
+.rb-lupentext { margin: 0; font-size: 15px; line-height: 1.4; text-align: center; }
+.rb-diagfrage { margin: 0; font-weight: 700; font-size: 15px; }
+.rb-optionen { display: grid; gap: 7px; }
+.rb-rueck { margin: 0; min-height: 1.4em; font-size: 14px; line-height: 1.35; }
+.rb-rueck.falsch { color: var(--falsch); } .rb-rueck.gut { color: var(--gut); font-weight: 700; }
+@keyframes rbAuf { from { opacity: 0; transform: scale(.97); } }
+
+/* Knöpfe */
+.rb-knopf, .hg-knopf { font: inherit; font-family: var(--schrift-kopf); font-size: 15px; font-weight: 700; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+  border: 2px solid var(--haupt); background: #fff; color: var(--dunkel); transition: transform .12s, background-color .15s, opacity .2s; }
+.rb-knopf:hover:not(:disabled), .hg-knopf:hover:not(:disabled) { transform: translateY(-1px); }
+.rb-knopf:active:not(:disabled), .hg-knopf:active:not(:disabled) { transform: scale(.97); }
+.rb-knopf.haupt, .hg-knopf.haupt { background: var(--haupt); color: var(--haupt-text); }
+.rb-knopf.zweit { border-color: rgba(0,0,0,.18); }
+.rb-knopf:disabled { opacity: .45; cursor: default; }
+.rb-knopf.option { text-align: left; font-weight: 600; border-color: rgba(0,0,0,.15); animation: rbEin .3s ease-out both; }
+.rb-knopf.option:nth-child(2) { animation-delay: .05s; } .rb-knopf.option:nth-child(3) { animation-delay: .1s; }
+.rb-knopf.option:nth-child(4) { animation-delay: .15s; } .rb-knopf.option:nth-child(5) { animation-delay: .2s; }
+.rb-knopf.option.richtig { opacity: 1; background: var(--gut); border-color: var(--gut); color: #fff; }
+.rb-knopf.option.falsch { opacity: .6; text-decoration: line-through; background: #f6dcd8; border-color: #e3a49b; }
+@keyframes rbEin { from { opacity: 0; transform: translateY(8px); } }
+
+/* Leiste */
+.rb-leiste { flex: 1 1 auto; min-height: 0; width: var(--raum); overflow-y: auto; background: var(--flaeche); border-radius: 12px;
+  padding: 10px 12px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 8px; }
+#rb.quer .rb-leiste { flex: 0 1 auto; width: min(480px, calc(100vw - var(--raum) - 26px)); height: var(--raum); }
+.rb-leiste > * { flex-shrink: 0; }
+.rb-leiste.mehr { -webkit-mask-image: linear-gradient(#000 calc(100% - 26px), rgba(0,0,0,.25)); mask-image: linear-gradient(#000 calc(100% - 26px), rgba(0,0,0,.25)); }
+.rb-leistenkopf { display: flex; align-items: center; gap: 10px; }
+.rb-zeichen { height: 26px; width: auto; flex: none; }
+.rb-leistenkopf b { display: block; font-family: var(--schrift-kopf); font-size: 18px; color: var(--dunkel); line-height: 1.1; }
+.rb-kundename { font-size: 13px; color: var(--leise); }
+.rb-aufgabe { margin: 0; font-size: 14px; line-height: 1.35; }
+.rb-aufgabe:empty { display: none; }
+.rb-aktionen { display: flex; flex-wrap: wrap; gap: 8px; }
+.rb-aktionen .rb-knopf { flex: 1 1 140px; }
+.rb-hinweis { flex: 1 1 100%; margin: 0; font-size: 13px; color: var(--leise); font-style: italic; }
+.rb-meldung { margin: 0; font-size: 14px; line-height: 1.35; flex: none; }
+.rb-meldung:empty { display: none; }
+.rb-meldung.gut { color: var(--gut); font-weight: 700; } .rb-meldung.falsch { color: var(--falsch); font-weight: 700; }
+.rb-meldung.kunde { font-style: italic; color: var(--leise); }
+.rb-meldung.neu { animation: rbEin .3s ease-out both; }
+.rb-notizen h3, .rb-diagnotizen h3 { margin: 2px 0 4px; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--leise); }
+.rb-notizen ul, .rb-diagnotizen ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.rb-notizen li, .rb-diagnotizen li { font-size: 13px; line-height: 1.3; padding: 5px 8px; background: #f2f4f6; border-radius: 7px; cursor: pointer; animation: rbEin .3s ease-out both; }
+.rb-notizen li b, .rb-diagnotizen li b { color: var(--dunkel); }
+/* erkannte Ursache oben in den Notizen, hervorgehoben (MZ, 24.10.2026) */
+.rb-notizen li.ursache, .rb-diagnotizen li.ursache { background: color-mix(in srgb, var(--haupt) 14%, #fff); border-left: 4px solid var(--haupt);
+  color: var(--dunkel); font-weight: 700; cursor: default; }
+
+/* Lager (Koffer, Transporter), Verstecke */
+.rb-lager { position: relative; flex: 1 1 auto; min-height: 0; border-radius: 10px; overflow: hidden; background: #d9dbde; }
+.rb-lagerbild { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
+.rb-lager.transporter .rb-lagerbild { object-position: 50% 40%; }
+/* Fächer: Spaltenzahl und Bildgröße wählt spiel.js (lagerEinpassen), damit alle Teile ganz sichtbar sind (QA Phase 4, S1).
+   Passt es selbst nach Vergrößern nicht, scrollt das Raster mit Schatten-Hinweis am unteren Rand (Klasse mehr). */
+.rb-fach { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; display: grid;
+  grid-template-columns: repeat(var(--spalten, 3), minmax(0, 1fr)); align-content: start; gap: 7px; padding: 8px; }
+.rb-fach .rb-teil canvas { width: var(--bild, 72px) !important; height: var(--bild, 72px) !important; }
+/* sehr knapp (quer flach, viele Teile): engere Fächer, damit möglichst alles ohne Scrollen passt */
+.rb-nah.lager.knapp .rb-fach { gap: 5px; padding: 5px; }
+.rb-nah.lager.knapp .rb-teil { padding: 3px 2px 4px; gap: 1px; }
+.rb-nah.lager.knapp .rb-teil span { font-size: 10.5px; line-height: 1.1; }
+.rb-lager.mehr::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 30px; pointer-events: none; border-radius: 0 0 10px 10px;
+  background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.38)); }
+.rb-teil { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 3px 6px; border-radius: 10px; border: 2px solid transparent;
+  background: rgba(255,255,255,.93); box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: pointer; font: inherit; color: var(--text);
+  transition: transform .12s, opacity .2s; animation: rbEin .3s ease-out both; }
+.rb-teil:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--haupt); }
+.rb-teil span { font-size: 11px; line-height: 1.15; text-align: center; font-weight: 600; max-width: 100%; }   /* max-width: Überlauf messbar (spiel.js beschriftungEinpassen) */
+.rb-teil.genommen { opacity: .35; } .rb-teil.genommen span::before { content: "✓ "; color: var(--gut); }
+.rb-teil.falsch { opacity: .35; } .rb-teil.falsch span { text-decoration: line-through; }
+.rb-teil.nebenbei { opacity: .55; }   /* Azubi: auf der Packliste, aber nicht das Wichtigste – ohne Abzug */
+.rb-teil.genommen:not(:disabled) { opacity: .6; border-color: var(--gut); }   /* Meister: antippen = wieder auspacken */
+.rb-versteck { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.rb-versteck p { margin: 0; font-size: 15px; }
+.rb-versteck .rb-fundname { font-size: 14px; color: var(--leise); }
+.rb-versteck .rb-fundfrage { font-weight: 700; font-size: 16px; color: var(--dunkel); max-width: 30em; }
+.rb-fundknoepfe { display: flex; gap: 10px; justify-content: center; }
+.rb-fundknoepfe .rb-knopf { min-width: 104px; }
+.rb-fundantwort { margin: 0; font-size: 15px; line-height: 1.4; max-width: 30em; animation: rbEin .3s ease-out both; }
+.rb-fundantwort:empty { display: none; }
+.rb-fundantwort.falsch { color: var(--falsch); font-weight: 700; }
+.rb-fundantwort.witzig { padding: 8px 12px; border-radius: 12px; background: #fff6d6; font-style: italic; }
+.rb-versteck canvas { flex: none; }
+/* Fund-Fenster zu flach (spiel.js fundEinpassen): Bild ist schon kleiner, jetzt auch Abstände und Schrift */
+.rb-nah.knapp { padding-top: 6px; padding-bottom: 8px; gap: 4px; }
+.rb-nah.knapp .rb-nahkopf { min-height: 30px; }
+.rb-nah.knapp .rb-nahkopf b { font-size: 16px; }
+.rb-nah.knapp .rb-versteck { gap: 5px; }
+.rb-nah.knapp .rb-versteck p, .rb-nah.knapp .rb-fundantwort { font-size: 13.5px; line-height: 1.3; }
+.rb-nah.knapp .rb-versteck .rb-fundname { font-size: 13px; }
+.rb-nah.knapp .rb-versteck .rb-fundfrage { font-size: 14.5px; }
+.rb-nah.knapp .rb-fundantwort.witzig { padding: 5px 10px; }
+.rb-nah.knapp .rb-fundknoepfe .rb-knopf { padding: 7px 12px; }
+
+/* Werkzeugsuche: drei gleichwertige Knöpfe ohne Unterzeilen (MZ, 24.10.2026) */
+.rb-wahl { flex: 1 1 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.rb-wahlknopf { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 4px 8px; border-radius: 10px; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700; line-height: 1.15; color: var(--haupt-text); background: var(--haupt); border: 2px solid var(--haupt);
+  -webkit-hyphens: manual; hyphens: manual; transition: transform .12s, background-color .15s, box-shadow .2s; animation: rbEin .3s ease-out both; }
+.rb-wahlknopf:nth-child(2) { animation-delay: .05s; } .rb-wahlknopf:nth-child(3) { animation-delay: .1s; }
+.rb-wahlknopf:hover { transform: translateY(-1px); } .rb-wahlknopf:active { transform: scale(.97); }
+.rb-wahlknopf.aktiv { background: var(--dunkel); border-color: var(--dunkel); box-shadow: 0 0 0 3px color-mix(in srgb, var(--haupt) 35%, transparent); }
+.rb-wahlbild { width: 46px; height: 32px; border-radius: 6px; background: #fff center / cover no-repeat; flex: none; }
+.rb-wahlknopf.raum .rb-wahlbild { position: relative; width: 32px; border-radius: 28%; background: color-mix(in srgb, var(--dunkel) 70%, #000);
+  box-shadow: inset 0 0 0 2px var(--akzent); }
+.rb-wahlknopf.raum .rb-wahlbild::after { content: ""; position: absolute; inset: 15%; background: var(--hand) center / contain no-repeat; }
+.rb-wahltext { text-align: center; overflow-wrap: break-word; max-width: 100%; }
+@media (max-height: 460px) { .rb-wahlbild { height: 24px; width: 36px; } .rb-wahlknopf.raum .rb-wahlbild { width: 24px; } .rb-wahlknopf { font-size: 13px; padding: 5px 3px 6px; } }
+
+/* Packstand (Geselle, Meister): was schon eingepackt ist */
+.rb-packstand { flex: 1 1 100%; display: grid; gap: 6px; padding: 7px 9px 9px; border-radius: 10px; background: #f2f4f6; }
+.rb-packkopf { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--leise); font-weight: 700; }
+.rb-packliste { display: flex; flex-wrap: wrap; gap: 5px; }
+.rb-packleer { font-size: 13px; color: var(--leise); }
+.rb-packteil { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 3px; border-radius: 999px; background: #fff; border: 1px solid #d5dbe1;
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); animation: rbEin .25s ease-out both; }
+.rb-packteil canvas { border-radius: 50%; background: #eef1f4; }
+button.rb-packteil { cursor: pointer; } button.rb-packteil:hover { border-color: var(--falsch); }
+.rb-packteil i { font-style: normal; color: var(--leise); font-size: 11px; margin-left: 1px; }
+
+/* Meister: Packliste nach „Fertig gepackt“ */
+.rb-packpruefung { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.rb-packpruefung .rb-packsatz { margin: 0; font-weight: 700; font-size: 15px; color: var(--dunkel); }
+.rb-packpruefung ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.rb-packpruefung li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: 8px; font-size: 14px; background: #f2f4f6; animation: rbEin .3s ease-out both; }
+.rb-packpruefung li.gut { color: var(--gut); font-weight: 600; }
+.rb-packpruefung li.fehlt, .rb-packpruefung li.unnoetig { background: #f9e3df; color: var(--falsch); }
+/* zu flach (spiel.js packEinpassen): Eingepacktes als Reihe kleiner Marken, Abzugszeilen enger */
+.rb-nah.packpruefung.knapp { padding-top: 6px; padding-bottom: 8px; gap: 4px; }
+.rb-nah.packpruefung.knapp .rb-nahkopf { min-height: 28px; }
+.rb-nah.packpruefung.knapp .rb-packpruefung ul { display: flex; flex-wrap: wrap; gap: 3px 4px; align-content: flex-start; }
+.rb-nah.packpruefung.knapp .rb-packpruefung li { flex: 1 1 100%; padding: 3px 9px; font-size: 13px; }
+.rb-nah.packpruefung.knapp .rb-packpruefung li.gut { flex: 0 0 auto; padding: 2px 8px; border-radius: 999px; font-size: 12.5px; }
+.rb-nah.packpruefung.knapp .rb-packpruefung li.summe { padding-top: 4px; }
+.rb-nah.packpruefung.knapp .rb-packsatz { font-size: 14px; }
+.rb-packpruefung li.summe { background: none; border-top: 1px solid #d5d9dd; border-radius: 0; padding-top: 7px; font-weight: 700; color: var(--dunkel); }
+/* flach quer (über Raum und Leiste): Liste links, Satz und Knopf rechts */
+.rb-nah.packpruefung.breit .rb-packpruefung { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 40%); grid-template-areas: "liste satz" "liste knopf"; column-gap: 16px; align-content: center; }
+.rb-nah.packpruefung.breit .rb-packpruefung ul { grid-area: liste; }
+.rb-nah.packpruefung.breit .rb-packsatz { grid-area: satz; align-self: end; }
+.rb-nah.packpruefung.breit .rb-packpruefung > .rb-knopf { grid-area: knopf; align-self: start; }
+.rb-packpruefung li:nth-child(2) { animation-delay: .06s; } .rb-packpruefung li:nth-child(3) { animation-delay: .12s; } .rb-packpruefung li:nth-child(n+4) { animation-delay: .18s; }
+
+/* Handgriffe */
+.rb-hghinweis { margin: 0; font-size: 14px; line-height: 1.35; font-weight: 600; }
+.rb-hgflaeche { flex: 1 0 auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.rb-hgflaeche > :not(.hg-bild):not(.hg-lcd) { flex-shrink: 0; }
+.rb-hgmeldung { margin: 0; min-height: 1.35em; font-size: 14px; line-height: 1.35; color: var(--leise); }
+.rb-hgmeldung.gut { color: var(--gut); font-weight: 700; } .rb-hgmeldung.falsch { color: var(--falsch); font-weight: 700; }
+.hg-notiz { margin: 0; padding: 5px 9px; border-radius: 7px; background: #fff6d6; font-size: 13px; font-weight: 600; }
+.hg-notiz[hidden] { display: none; }
+.hg-bild { flex: 1 1 auto; min-height: 110px; width: 100%; touch-action: none; }
+/* QA Phase 3: die Leinwand bringt keine eigene Höhe mit (sonst zählte ihre letzte Größe beim Nachmessen in nahPlatz mit und
+   das Fenster wuchs bei jeder Meldung um den Zuschlag – „Druck niedriger stellen“ +18 px je Klick) */
+.hg-bild:not(.klein) { flex-basis: 0; contain: size; }
+.hg-bild.klein { flex: 0 1 26%; min-height: 70px; }
+/* Platz für zwei Zeilen Rückmeldung von Anfang an: Bild und Knöpfe springen nicht, wenn eine längere Meldung kommt */
+.rb-nah.handgriff .rb-hgmeldung { min-height: 1.35em; }
+.hg-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.hg-knoepfe.wahl { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.hg-knoepfe.wahl .hg-knopf { font-size: 13px; padding: 8px 8px; font-weight: 600; }
+.hg-knopf.halten { padding: 13px 20px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.hg-knopf.gedrueckt { transform: scale(.95); filter: brightness(.9); }
+.hg-knopf.fertig { background: var(--dunkel); border-color: var(--dunkel); color: #fff; }
+.hg-knopf.erledigt { opacity: .35; }
+/* Im Menü einstellen: Wert markiert, aber noch nicht bestätigt – OK leuchtet sanft (QA Phase 4) */
+.hg-knopf.bereit { animation: hgBereit 1.3s ease-in-out infinite; }
+@keyframes hgBereit { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--haupt) 35%, transparent); } }
+html.rb-ruhig .hg-knopf.bereit { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--haupt) 35%, transparent); }
+.hg-knopf.wackeln { animation: rbWackeln .35s; }
+@keyframes rbWackeln { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+.hg-schritte { margin: 0; padding: 0 0 0 22px; font-size: 13px; line-height: 1.35; columns: 2; column-gap: 18px; }
+.hg-schritte:empty { display: none; }
+.hg-schritte li { color: var(--gut); font-weight: 600; }
+/* Teil einsetzen: Arbeitsschritte aus den Daten – erledigt (✓), jetzt (der Handgriff), offen */
+.hg-teilschritte { columns: auto; padding-left: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; font-size: 12.5px; }
+.hg-teilschritte li { position: relative; padding-left: 17px; transition: color .3s ease; }
+.hg-teilschritte li::before { position: absolute; left: 0; top: 0; width: 13px; text-align: center; }
+.hg-teilschritte li.erledigt::before { content: "✓"; }
+.hg-teilschritte li.jetzt { color: var(--dunkel); font-weight: 800; }
+.hg-teilschritte li.jetzt::before { content: "▸"; color: var(--haupt); }
+.hg-teilschritte li.offen { color: var(--leise); font-weight: 500; }
+.hg-teilschritte li.offen::before { content: "○"; font-size: 10px; top: 2px; }
+.hg-lcd { flex: 1 1 auto; min-height: 120px; border-radius: 10px; padding: 8px 10px; background: #0d1418; color: #9fe8ff; overflow: auto;
+  font: 700 15px/1.25 ui-monospace, "Cascadia Mono", Consolas, monospace; box-shadow: inset 0 0 0 3px var(--haupt); }
+.hg-lcd .kopf { opacity: .7; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.hg-lcd .zeile { display: flex; justify-content: space-between; gap: 10px; padding: 5px 6px; border-radius: 4px; cursor: pointer; }
+.hg-lcd .zeile.aktiv { background: #9fe8ff; color: #0d1418; }
+.hg-lcd .zeile small { opacity: .75; font-size: 12px; text-align: right; }
+
+/* ---------- Szenen über dem ganzen Bildschirm ---------- */
+.rb-szene { position: absolute; inset: 0; padding-top: 52px; display: flex; align-items: center; justify-content: center; z-index: 5;
+  background: rgba(8,20,36,.72); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); animation: rbBlende .3s ease-out both; overflow: hidden; }
+.rb-szene[hidden] { display: none; }
+@keyframes rbBlende { from { opacity: 0; } }
+.rb-titel { text-align: center; padding: 22px 34px; border-radius: 16px; background: var(--haupt); color: var(--haupt-text);
+  box-shadow: 0 14px 40px rgba(0,0,0,.45); animation: rbTitel .7s cubic-bezier(.2,.9,.3,1.25) both; margin: 0 14px; }
+.rb-titel small { display: block; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; opacity: .8; }
+.rb-titel strong { display: block; font-family: var(--schrift-kopf); font-size: clamp(24px, 7vw, 40px); line-height: 1.15; margin-top: 4px; }
+@keyframes rbTitel { from { opacity: 0; transform: scale(.75) rotate(-2deg); } }
+.rb-wzfrage strong { font-size: clamp(22px, 6vw, 34px); }
+.rb-wzfrage .rb-wzzusatz { display: block; margin-top: 8px; font-size: clamp(16px, 4.4vw, 20px); font-weight: 600; }
+.rb-wzfrage small { text-transform: none; letter-spacing: 0; font-size: 16px; opacity: .92; margin-top: 8px; }
+.rb-funk { width: min(440px, calc(100% - 28px)); background: #fff; border-radius: 16px; padding: 16px; display: grid; gap: 10px;
+  box-shadow: 0 14px 40px rgba(0,0,0,.45); animation: rbEin .4s ease-out both; }
+.rb-funkkopf { display: flex; align-items: center; gap: 10px; }
+.rb-funkbild { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; object-position: 50% 4%; background: #dfe3e7; }
+.rb-funkname { font-family: var(--schrift-kopf); font-weight: 700; font-size: 17px; color: var(--dunkel); }
+.rb-funkname::after { content: " – Funk"; font-weight: 500; color: var(--leise); }
+.rb-funktext { margin: 0; padding: 9px 12px; border-radius: 12px; background: #eef3f9; font-size: 15px; line-height: 1.4; animation: rbEin .4s .15s ease-out both; }
+.rb-fahrt { height: 8px; border-radius: 4px; background: #e3e7eb; position: relative; overflow: hidden; }
+.rb-fahrt i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--haupt); border-radius: 4px; }
+.rb-fahrt.laeuft i { animation: rbFahrt 1.5s ease-in-out forwards; }
+@keyframes rbFahrt { to { width: 100%; } }
+
+/* Gespräch: Figur und Sprechblasen */
+.rb-szene.gespraech { align-items: stretch; justify-content: stretch; }
+.rb-hg { position: absolute; inset: 0; background-size: cover; background-position: center; filter: blur(6px) brightness(.55); transform: scale(1.06); }
+.rb-figurplatz { position: absolute; left: 4%; bottom: 0; height: min(68%, 620px); aspect-ratio: var(--seite, .36); animation: rbFigur .5s ease-out both; }
+.rb-figur { height: 100%; width: 100%; object-fit: contain; object-position: bottom; display: block; filter: drop-shadow(0 8px 14px rgba(0,0,0,.5)); }
+.rb-westenlogo { position: absolute; z-index: 1; object-fit: contain; pointer-events: none; transform: scale(.82); }
+@keyframes rbFigur { from { opacity: 0; transform: translateX(-24px); } }
+.rb-blasen { position: absolute; right: 4%; top: calc(52px + 4%); width: min(56%, 460px); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.rb-name { font-family: var(--schrift-kopf); font-weight: 700; color: #fff; font-size: 17px; text-shadow: 0 1px 4px #000; }
+.rb-blasenliste { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.blase { position: relative; background: #fff; color: var(--text); border-radius: 14px; padding: 10px 14px; font-size: 16px; line-height: 1.4;
+  box-shadow: 0 6px 16px rgba(0,0,0,.35); animation: rbBlase .35s cubic-bezier(.2,.9,.3,1.2) both; }
+.blase:not(:last-child) { opacity: .72; font-size: 14px; }
+.blase:last-child::after { content: ""; position: absolute; left: -9px; top: 16px; border: 9px solid transparent; border-left: 0; border-right-color: #fff; }
+@keyframes rbBlase { from { opacity: 0; transform: translateY(8px) scale(.96); } }
+.rb-weiter { align-self: flex-end; min-width: 140px; }
+@media (orientation: portrait), (max-aspect-ratio: 1/1) {
+  .rb-blasen { left: 4%; right: 4%; width: auto; top: calc(52px + 12px); }
+  .rb-figurplatz { height: min(56%, 560px); left: 6%; }
+  .blase:last-child::after { left: 26px; top: auto; bottom: -9px; border: 9px solid transparent; border-bottom: 0; border-top-color: #fff; }
+  .rb-weiter { position: fixed; right: 5%; bottom: 5%; }
+}
+@media (max-height: 460px) { .rb-figurplatz { height: 84%; } .blase { font-size: 15px; padding: 8px 12px; } }
+
+/* Einsatzbuch-Karte */
+.rb-buchkarte { width: min(440px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow-y: auto; background: #fffdf7; border-radius: 16px; padding: 14px 16px 16px;
+  display: flex; flex-direction: column; gap: 8px; box-shadow: 0 14px 40px rgba(0,0,0,.45); animation: rbEin .45s ease-out both; }
+.rb-buchkopf { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--leise); letter-spacing: .6px; }
+.rb-buchstand { font-weight: 700; } .rb-buchstand.neu { color: var(--haupt); }
+.rb-buchbild { width: 100%; height: min(28vh, 170px); }
+.rb-buchkarte h2 { margin: 0; font-family: var(--schrift-kopf); font-size: 20px; color: var(--dunkel); line-height: 1.2; }
+.rb-erklaer { margin: 0; font-size: 14.5px; line-height: 1.45; }
+.rb-einsatzpunkte { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; background: #f1f3f5; font-size: 13.5px; }
+.rb-einsatzpunkte .zeile { display: flex; justify-content: space-between; gap: 10px; }
+.rb-einsatzpunkte .summe { border-top: 1px solid #d5d9dd; padding-top: 4px; margin-top: 2px; font-weight: 700; }
+.rb-lob { margin: 0; font-style: italic; color: var(--leise); font-size: 14px; }
+
+/* Abbruch-Frage */
+.rb-frage { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(0,0,0,.55); }
+.rb-frage[hidden] { display: none; }
+.rb-fragebox { width: min(360px, calc(100% - 32px)); background: #fff; border-radius: 14px; padding: 16px; display: grid; gap: 8px; animation: rbAuf .2s ease-out both; }
+.rb-fragebox p { margin: 0 0 6px; font-size: 16px; line-height: 1.4; }
+
+/* ---------- Startbild „Heizungs-Display“ ---------- */
+.stil-rohrbruch #startSchirm, .stil-rohrbruch #endSchirm { display: block; padding: 0; background: var(--wand); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.stil-rohrbruch #startSchirm[hidden], .stil-rohrbruch #endSchirm[hidden] { display: none; }
+.rb-unsichtbar { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.rb-geraet { position: absolute; inset: 0; width: 100%; height: 100%; }
+#startSchirm .rb-logoquer { position: absolute; width: auto; animation: rbEin .5s ease-out both; }
+.rb-display { position: absolute; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--dw) * .02);
+  padding: calc(var(--dw) * .03) calc(var(--dw) * .04); color: #cfe9ff; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.rb-punkte { width: 100%; height: calc(var(--dw) * .15); flex: none; animation: rbDisplay .9s .2s steps(6) both; }
+@keyframes rbDisplay { from { opacity: 0; } }
+#startSchirm .rb-display .unter { all: unset; display: block; text-align: center; font-size: clamp(10px, calc(var(--dw) * .05), 22px); font-weight: 700;
+  color: #e6f4ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: rbDisplay .6s .7s steps(4) both; }
+#startSchirm .rb-display .unter::after { display: none; }
+.rb-display > * { flex-shrink: 0; }
+.rb-dzeile { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; white-space: nowrap; font-size: clamp(8px, calc(var(--dw) * .034), 16px);
+  color: #9fe8ff; text-transform: uppercase; letter-spacing: .5px; animation: rbDisplay .6s 1s steps(4) both; }
+#startSchirm .rb-dzeile .besttafel { all: unset; display: flex; gap: .5em; align-items: baseline; }
+#startSchirm .rb-dzeile .besttafel .name { font-size: 1em; font-weight: 700; letter-spacing: .5px; opacity: .8; }
+#startSchirm .rb-dzeile .besttafel .zahl { all: unset; font-size: 1.25em; font-weight: 800; color: #fff; }
+#startSchirm .rb-dzeile .besttafel .zahl small { font-size: .75em; color: #9fe8ff; margin: 0; opacity: 1; }
+.rb-startmano { position: absolute; border-radius: 50%; }
+.rb-unten { position: absolute; display: flex; flex-direction: column; gap: 9px; text-align: center; color: #2a3440; }
+.rb-unten > * { animation: rbEin .45s ease-out both; }
+.rb-unten > :nth-child(2) { animation-delay: .1s; } .rb-unten > :nth-child(3) { animation-delay: .2s; } .rb-unten > :nth-child(n+4) { animation-delay: .3s; }
+#startSchirm .rb-unten .anleitung { margin: 0; font-size: 14px; line-height: 1.45; opacity: 1; }
+.rb-stufentext { margin: 0; font-size: 13px; color: var(--dunkel); font-weight: 600; }
+.rb-stufentext:empty { display: none; }
+.stil-rohrbruch .rb-unten .knopf, .stil-rohrbruch .rb-endknoepfe .knopf, .stil-rohrbruch .rb-ausbildung .knopf { margin: 0; }
+.stil-rohrbruch .knopf.zweit { color: var(--dunkel); background: rgba(255,255,255,.7); border-color: color-mix(in srgb, var(--haupt) 55%, #fff); }
+.stil-rohrbruch .knopf.zweit:hover { background: #fff; }
+#startSchirm .rb-unten .quellen { margin: 0; font-size: 11px; opacity: .6; }
+#startSchirm .rb-unten .quellen:empty { display: none; }
+.rb-unten.seite { text-align: left; }
+.rb-unten .knopf { text-align: center; }
+@media (min-height: 680px) { .rb-unten { gap: 12px; } #startSchirm .rb-unten .anleitung { font-size: 15px; } }
+
+/* ---------- Endbild: Manometer ---------- */
+/* Karte senkrecht mittig, solange sie passt (margin: auto); ist sie höher als der Bildschirm, beginnt sie oben */
+#endSchirm { overflow-y: auto; }
+.stil-rohrbruch #endSchirm:not([hidden]) { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; padding: 16px 0; }
+.rb-endkarte { position: relative; flex: none; width: min(440px, calc(100% - 24px)); margin: auto; padding: 16px 18px 18px; background: #fbfbf9; border-radius: 20px;
+  box-shadow: 0 2px 0 #d7d4cc, 0 18px 40px rgba(0,0,0,.18); display: flex; flex-direction: column; gap: 10px; color: var(--text); animation: rbEin .4s ease-out both; }
+#endSchirm.quer .rb-endkarte { width: min(880px, calc(100% - 24px)); display: grid; grid-template-columns: minmax(240px, 1fr) 1.25fr; column-gap: 22px; align-items: start; }
+#endSchirm.quer .rb-endkopf { grid-column: 1 / -1; }
+.rb-endkopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.rb-endkopf .rb-logoquer { height: 38px; width: auto; animation: rbEin .5s ease-out both; }
+.rb-endstufe { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--leise); }
+.rb-endlinks, .rb-endrechts { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.rb-endrechts { align-items: stretch; }
+.rb-manobox { position: relative; width: min(74vw, 270px); aspect-ratio: 1; container-type: inline-size; }
+#endSchirm.quer .rb-manobox { width: min(36vw, 260px, calc(100vh - 210px)); min-width: 170px; }
+.rb-mano { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 8px rgba(0,0,0,.2)); }
+.rb-mano .rand { fill: #c5cad0; } .rb-mano .blatt { fill: #fbfbf8; stroke: #e1e3e5; }
+.rb-mano .band { fill: none; stroke: var(--haupt); stroke-width: 9; }
+.rb-mano .grob { stroke: #222; stroke-width: 1.8; } .rb-mano .fein { stroke: #555; stroke-width: .9; }
+.rb-mano text { font: 600 10.5px system-ui, sans-serif; fill: #333; text-anchor: middle; }
+.rb-mano .einheit { font-size: 9px; fill: #777; }
+.rb-mano .nadel { transform-origin: 100px 100px; }   /* Bewegung macht schirme.js (gemeinsam mit der Zahl) */
+.rb-mano .nadel path { fill: #c62828; } .rb-mano .nadel circle { fill: #333; }
+/* Zahl unter der Nabe, so klein und hoch, dass auch „1.000“ die Skalenzahlen 0 und 1.000 nicht überdeckt */
+#endSchirm .rb-manobox .wert { position: absolute; left: 50%; top: 55.5%; transform: translateX(-50%); margin: 0; padding: .4cqw 2.6cqw; border-radius: 7px;
+  background: #0d1418; color: #9fe8ff; font: 800 7.8cqw/1.12 ui-monospace, "Cascadia Mono", Consolas, monospace; white-space: nowrap;
+  font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 2px var(--haupt); animation: rbDisplay .25s .1s steps(3) both; }
+#endSchirm .rb-manobox .wert small { display: none; }   /* „Punkte“ steht klein im Zifferblatt */
+#endSchirm .ueberschrift { position: static; transform: none; max-width: none; margin: 0; padding: 0; background: none; box-shadow: none; border-radius: 0;
+  font-family: var(--schrift-kopf); font-size: clamp(24px, 7vw, 32px); font-weight: 800; color: var(--haupt); text-align: center; white-space: normal;
+  animation: rbEin .5s 1.2s ease-out both !important; }
+#endSchirm .zeit { display: inline-flex; align-items: center; gap: 7px; margin: 0; padding: 5px 14px; border: 1.5px solid #c9cdd2; border-radius: 999px;
+  color: var(--text); background: #fff; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; animation: rbEin .5s 1.4s ease-out both; }
+#endSchirm .zeit[hidden] { display: none; }
+#endSchirm .zeit svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+#endSchirm .rb-mano .einheit { font-size: 10px; font-weight: 700; letter-spacing: .5px; }
+#endSchirm .text { margin: 0; font-size: 14.5px; line-height: 1.4; text-align: center; }
+#endSchirm .auswertung { margin: 0; background: #f1f3f5; color: var(--text); }
+#endSchirm .auswertung .zeile + .zeile { border-top-color: #dde1e5; }
+#endSchirm .auswertung .balken { background: #dfe3e7; } #endSchirm .auswertung .balken i { background: var(--haupt); }
+#endSchirm .bestwert { margin: 0; text-align: center; font-size: 14px; color: var(--leise); }
+#endSchirm .bestwert.neu { color: var(--haupt); font-weight: 800; }
+.rb-ausbildung { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--haupt) 9%, #fff);
+  border: 1px solid color-mix(in srgb, var(--haupt) 25%, #fff); text-align: center; }
+.rb-ausbildung p { margin: 0; font-size: 14px; font-weight: 600; color: var(--dunkel); }
+.rb-ausbildung .knopf[aria-disabled] { cursor: default; }
+/* mit Bild „Azubi und Meister“ (MZ, 24.10.2026): Bild links neben Satz und Knopf (passt auch auf 320 px) */
+.rb-ausbildung.mitbild { flex-direction: row; align-items: center; gap: 10px; text-align: left; padding: 8px; }
+.rb-ausbildungbild { flex: none; width: min(38%, 150px); aspect-ratio: 3 / 2; object-fit: cover; border-radius: 8px; background: #dde3ea; }
+.rb-ausbildungtext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.rb-ausbildung.mitbild p { font-size: 13.5px; line-height: 1.3; }
+/* „Zur Website“ gefüllt in Hausfarbe mit weißer Schrift (MZ, 24.10.2026) */
+.stil-rohrbruch .rb-ausbildung .knopf.rb-webknopf { background: var(--haupt); border-color: var(--haupt); color: var(--haupt-text, #fff); padding-top: 9px; padding-bottom: 9px; }
+.stil-rohrbruch .rb-ausbildung .knopf.rb-webknopf:hover { background: color-mix(in srgb, var(--haupt) 85%, #000); }
+.rb-endknoepfe { display: grid; gap: 8px; }
+.rb-endknoepfe .knopf[hidden] { display: none; }
+/* alle Knöpfe einheitlich zentriert (der Link „Zum Menü“ war linksbündig) */
+.stil-rohrbruch .rb-endknoepfe .knopf, .stil-rohrbruch .rb-ausbildung .knopf { text-align: center; }
+/* Knopfleiste unten fest: passt die Karte nicht auf den Bildschirm, bleiben „Nochmal spielen“ und „Zum Menü“ ohne Scrollen
+   erreichbar (QA 24.10.2026); auf großen Bildschirmen steht sie ganz normal am Ende der Karte */
+.rb-endknoepfe { position: sticky; bottom: 0; z-index: 3; margin: 0 -18px -8px; padding: 6px 18px calc(10px + env(safe-area-inset-bottom));
+  background: #fbfbf9; border-radius: 0 0 20px 20px; transition: box-shadow .2s; }
+.rb-endknoepfe.fest { box-shadow: 0 -10px 14px -10px rgba(0,0,0,.3); border-radius: 0; }
+#endSchirm.quer .rb-endknoepfe { grid-auto-flow: column; grid-auto-columns: 1fr; }
+/* Einsatz-Namen dürfen umbrechen (schmale Handys), statt mit „…“ abgeschnitten zu werden */
+#endSchirm .auswertung .name { white-space: normal; line-height: 1.25; }
+
+/* weniger Bewegung: nur kurz einblenden */
+@media (prefers-reduced-motion: reduce) {
+  .rb-mano .nadel { transition: none !important; }
+  .rb-nah, .rb-szene, .rb-buchkarte, .rb-funk, .rb-titel { animation: rbBlende .2s ease-out both !important; }
+}
+html.rb-ruhig *, html.rb-ruhig *::before, html.rb-ruhig *::after { animation-duration: .01s !important; animation-delay: 0s !important; transition: none !important; }
+
+/* Hauptknopf: statt „atmen“ (Größe) ein sanftes Leuchten – gleiche Wirkung, aber der Knopf bleibt ruhig an seinem Platz
+   (Testwerkzeuge wie Playwright warten sonst vergeblich auf einen „stabilen“ Knopf) */
+.stil-rohrbruch .schirm:not([hidden]) .knopf:not(.zweit) { animation: einGleiten .45s .4s ease-out both, rbGlimmen 2.4s 1.2s ease-in-out infinite; }
+@keyframes rbGlimmen { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--haupt) 30%, transparent), 0 6px 18px color-mix(in srgb, var(--haupt) 45%, transparent); } }
+
+/* flache Bildschirme (Handy quer): Nahansicht kompakter, damit Handgriffe ohne Scrollen passen */
+@media (max-height: 460px) {
+  .rb-nah { padding: 6px 10px 8px; gap: 5px; }
+  .rb-nahkopf { min-height: 30px; }
+  .rb-nahkopf b { font-size: 16px; }
+  .rb-zu { width: 30px; height: 30px; }
+  .rb-hghinweis, .rb-hgmeldung, .rb-lupentext { font-size: 13px; }
+  .hg-notiz { padding: 3px 8px; font-size: 12px; }
+  .hg-bild { min-height: 92px; }
+  .rb-hgflaeche { gap: 5px; }
+  .hg-knopf, .rb-knopf { padding: 8px 12px; font-size: 14px; }
+  .hg-knopf.halten { padding: 10px 16px; }
+}
+
+/* ===================== Phase 3 (25.10.2026) ===================== */
+/* Raum-Ebenen: Overlays (z. B. Vorhang), Tageszeit, Tiere – unter den Marken, nicht antippbar */
+.rb-overlays, .rb-tageszeit, .rb-leben { position: absolute; inset: 0; border-radius: 12px; overflow: hidden; pointer-events: none; }
+.rb-overlay { position: absolute; object-fit: fill; }
+.rb-tageszeit { transition: background-color 1.2s ease; }
+.rb-raum.zeit-morgen .rb-tageszeit { background: rgba(150, 190, 255, .10); }
+.rb-raum.zeit-mittag .rb-tageszeit { background: transparent; }
+.rb-raum.zeit-nachmittag .rb-tageszeit { background: rgba(255, 170, 90, .13); }
+.rb-raum.dunkel .rb-tageszeit { background: rgba(5, 10, 20, .62); }
+/* Tier selbst: leben.css (Developer A, .rb-tierbox/.rb-tierpose) */
+.rb-tierblase { position: absolute; transform: translate(-50%, -100%); width: max-content; max-width: 62%; background: #fff; color: var(--text); border-radius: 12px;
+  padding: 6px 10px; font-size: 13px; line-height: 1.35; box-shadow: 0 4px 12px rgba(0,0,0,.35); animation: rbBlase .4s ease-out both;
+  transition: opacity .6s ease; }
+.rb-tierblase.weg { opacity: 0; }
+
+/* Übergang zwischen den Einsätzen: Transporter fährt seitlich durchs Bild (MZ, 25.10.2026). Grund neutral hell – der
+   Transporter in Hausfarbe hebt sich ab (auf Hausfarbe wäre er kaum zu sehen) */
+.rb-szene.fahrt { background: linear-gradient(180deg, color-mix(in srgb, var(--haupt) 55%, #0b1a2c) 0 52px, #f1f4f7 52px, #e3e8ee 60%, color-mix(in srgb, var(--haupt) 18%, #cfd6de) 100%);
+  -webkit-backdrop-filter: none; backdrop-filter: none; padding: 60px 12px 12px; }
+/* Firmenbild dahinter (MZ, 25.10.2026): weichgezeichnet und aufgehellt, Kopfband für die Kopfzeile bleibt frei */
+.rb-fahrthg { position: absolute; left: 0; right: 0; top: 52px; bottom: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+.rb-fahrthg::before { content: ""; position: absolute; inset: -24px; background: var(--bild, none) center / cover no-repeat;
+  filter: blur(6px) saturate(.85) brightness(1.1); opacity: 0; transition: opacity .6s ease-out; }
+.rb-fahrthg.da::before { opacity: 1; }
+.rb-fahrthg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(241,244,247,.52), rgba(241,244,247,.62) 55%, rgba(227,232,238,.8)); }
+/* hochkant: Bild als Band in voller Breite hinter der Straße (cover wäre hier nur ein unkenntlicher Ausschnitt), darunter hell */
+@media (orientation: portrait) {
+  /* Band bis knapp unter die Straße (Fahrt-Box steht mittig): mindestens Bildbreite × 2/3, sonst 56 % der Höhe */
+  .rb-fahrthg::before { bottom: auto; height: max(calc((100vw + 48px) * .6667), 56%); background-size: cover; background-position: center; }
+  .rb-fahrthg::after { background: linear-gradient(180deg, rgba(241,244,247,.5) 0, rgba(241,244,247,.6) 44%,
+    #eef1f4 56%, #e3e8ee 78%, color-mix(in srgb, var(--haupt) 14%, #d6dce3) 100%); }
+}
+.rb-fahrtbox { position: relative; z-index: 1; }
+html.rb-ruhig .rb-fahrthg::before { transition: none; }
+.rb-fahrtbox { width: min(560px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.rb-strasse { position: relative; width: 100vw; height: clamp(110px, 30vh, 220px); overflow: hidden; flex: none; }
+.rb-strasse::after { content: ""; position: absolute; left: 0; right: 0; bottom: 6%; height: 3px; border-radius: 2px;
+  background: repeating-linear-gradient(90deg, rgba(60,70,80,.35) 0 28px, transparent 28px 52px); }
+/* QA Phase 3: auf schmalen Handys ganz im Bild (Breite höchstens Bildschirm − 24 px) */
+.rb-transporter { position: absolute; bottom: 8%; left: 50%; height: min(88%, calc((100vw - 24px) * 308 / 640)); aspect-ratio: 640 / 308; transform: translateX(-50%); }
+.rb-transporter.faehrt { animation: rbFahren var(--dauer, 2.2s) cubic-bezier(.45,.05,.4,.95) both; }
+@keyframes rbFahren { from { left: 100%; transform: translateX(0); } to { left: 0; transform: translateX(-100%); } }
+.rb-transporterbild { display: block; width: 100%; height: 100%; filter: drop-shadow(0 8px 8px rgba(0,0,0,.35)); }
+.rb-transporterlogo { position: absolute; object-fit: contain; pointer-events: none; }
+.rb-fahrtziel { color: var(--dunkel); font-family: var(--schrift-kopf); font-weight: 700; font-size: clamp(18px, 5vw, 24px);
+  animation: rbEin .5s .3s ease-out both; text-align: center; }
+.rb-fahrtfunk { width: 100%; padding: 12px 14px; gap: 8px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .rb-szene.fahrt { padding-top: 54px; }
+  .rb-strasse { height: 30vh; }
+  .rb-fahrtbox { gap: 6px; }
+  .rb-fahrtfunk { padding: 8px 12px; }
+}
+
+/* Zwischenfall */
+.rb-zwtitel { background: var(--akzent); color: #1b2430; }
+.rb-szene.zwischenfall .rb-blasen.rand { left: 4%; right: 4%; width: auto; }
+.rb-szene.zwischenfall .rb-blasen.rand .blase:last-child::after { display: none; }
+.rb-szene.zwischenfall .rb-blasen.rand .blase { border-left: 4px solid var(--akzent); }
+.rb-zwaufgabe { margin: 4px 0 0; color: #fff; font-size: 14px; text-shadow: 0 1px 3px #000; }
+.rb-zwknoepfe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; width: 100%; }
+.rb-zwknoepfe .rb-knopf { min-width: 110px; }
+.rb-zwding { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 14px; border-radius: 14px; border: 2px solid var(--akzent);
+  background: #fff; color: var(--text); font-weight: 700; cursor: pointer; animation: rbZwPuls 1.8s ease-in-out infinite; transition: transform .15s; }
+.rb-zwding:hover { transform: translateY(-2px); }
+.rb-zwding.erledigt { animation: none; border-color: var(--gut); }
+.rb-zwbild { display: block; width: auto; object-fit: contain; }
+.rb-zwtasse { display: block; margin-top: 6px; }
+@keyframes rbZwPuls { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--akzent) 35%, transparent); } }
+.rb-zwring { width: 46px; height: 46px; border-radius: 50%; border: 5px solid rgba(255,255,255,.35); border-top-color: var(--akzent);
+  animation: rbZwDreh 1s linear infinite; }
+.rb-zwring.voll { border-color: var(--gut); animation: none; }
+@keyframes rbZwDreh { to { transform: rotate(360deg); } }
+.rb-zwraum { position: absolute; z-index: 3; transform: translate(-50%, -50%); padding: 0; border: 0; background: none; cursor: pointer; touch-action: none;
+  animation: rbBlende .5s ease-out both; transition: opacity .4s ease; }
+.rb-zwraum.tier { transform: translate(-50%, -85%); cursor: grab; }
+.rb-zwraum.wegtragen:not(.tier) { cursor: grab; }
+.rb-zwraum.zieht { cursor: grabbing; filter: drop-shadow(0 8px 10px rgba(0,0,0,.45)); }
+.rb-zwraum.suchen canvas { filter: drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
+.rb-zwraum.hilfe { border-radius: 50%; animation: rbZwPuls 1.6s ease-in-out infinite; }
+.rb-zwraum.weg, .rb-zwzone.weg { opacity: 0; }
+/* ZF-26 „Ausgebüxt“: Eleonore halb versteckt (Fußpunkt = left/top, etwas Rand für den Finger); was vor ihr steht, legt
+   .rb-zwverdeck als Ausschnitt des Raumbilds darüber (gleich getönt wie der Raum) */
+.rb-zwraum.kaninchen { transform: translate(-50%, calc(-100% + 4px)); padding: 10px 12px 4px; border-radius: 40%; }
+.rb-zwraum.kaninchen img { display: block; width: auto; max-width: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+.rb-zwverdeck { position: absolute; inset: 0; z-index: 4; pointer-events: none; background-size: 100% 100%; border-radius: 12px; transition: opacity .4s ease; }
+.rb-zwverdeck::after { content: ''; position: absolute; inset: 0; }
+.rb-raum.zeit-morgen .rb-zwverdeck::after { background: rgba(150, 190, 255, .10); }
+.rb-raum.zeit-nachmittag .rb-zwverdeck::after { background: rgba(255, 170, 90, .13); }
+.rb-raum.dunkel .rb-zwverdeck::after { background: rgba(5, 10, 20, .62); }
+.rb-zwverdeck.weg { opacity: 0; }
+/* Licht aus (ZF-07, ZF-12): Schalter bzw. Sicherung im dunklen Raum, sanft beleuchtet wie ein Leuchtschalter; ruhig ohne Pulsieren */
+.rb-zwraum.schalter { border-radius: 22%; padding: 4px; background: radial-gradient(circle, rgba(255,240,190,.62), rgba(255,222,140,.34) 75%, rgba(255,214,110,.3));
+  box-shadow: 0 0 14px 4px rgba(255,214,110,.45); animation: rbBlende .5s ease-out both, rbSchalter 2.4s .5s ease-in-out infinite; }
+.rb-zwraum.schalter canvas { filter: drop-shadow(0 0 4px rgba(255,230,160,.9)); }
+@keyframes rbSchalter { 50% { box-shadow: 0 0 22px 8px rgba(255,214,110,.6); } }
+html.rb-ruhig .rb-zwraum.schalter { animation: none; }
+.rb-zwzone { position: absolute; z-index: 2; top: 6%; bottom: 6%; width: 18%; border: 3px dashed rgba(255,255,255,.85); border-radius: 14px;
+  background: color-mix(in srgb, var(--akzent) 22%, transparent); display: grid; place-items: center; pointer-events: none;
+  animation: rbBlende .4s ease-out both; transition: opacity .4s ease; }
+.rb-zwzone.links { left: 2%; } .rb-zwzone.rechts { right: 2%; }
+.rb-zwzone span { color: #fff; font-size: 34px; text-shadow: 0 1px 4px #000; }
+
+/* Einsatzbuch-Ansicht */
+.rb-buchansicht { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; gap: 10px; padding: 14px max(12px, env(safe-area-inset-left)) 12px;
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--haupt) 55%, #0b1a2c), #0b1a2c); color: #fff;
+  animation: rbBlende .3s ease-out both; transition: opacity .2s ease; }
+.rb-buchansicht.weg { opacity: 0; }
+.rb-buchansichtkopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: min(1100px, 100%); margin: 0 auto; }
+.rb-buchtitel { display: flex; align-items: baseline; gap: 12px; }
+.rb-buchtitel h2 { margin: 0; font-family: var(--schrift-kopf); font-size: clamp(24px, 6vw, 34px); color: #fff; }
+.rb-buchzahl { font-size: 18px; font-weight: 700; opacity: .9; }
+.rb-buchzurueck { flex: none; }
+.rb-buchbalken { width: min(1100px, 100%); margin: 0 auto; height: 8px; border-radius: 4px; background: rgba(255,255,255,.2); overflow: hidden; flex: none; }
+.rb-buchbalken i { display: block; height: 100%; width: 0; background: var(--akzent); border-radius: 4px; transition: width 1.2s cubic-bezier(.3,.8,.3,1); }
+.rb-buchfilter { display: flex; gap: 6px; overflow-x: auto; width: min(1100px, 100%); margin: 0 auto; padding-bottom: 4px; flex: none; scrollbar-width: thin; }
+.rb-buchchip { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 6px 12px; border-radius: 12px; border: 0;
+  background: rgba(255,255,255,.14); color: #fff; font: 600 13px/1.25 system-ui, sans-serif; cursor: pointer; transition: background .2s, transform .15s; }
+.rb-buchchip small { font-weight: 500; opacity: .8; font-size: 11.5px; }
+.rb-buchchip:hover { background: rgba(255,255,255,.24); transform: translateY(-1px); }
+.rb-buchchip.aktiv { background: #fff; color: var(--dunkel); }
+.rb-buchraster { flex: 1 1 auto; overflow-y: auto; width: min(1100px, 100%); margin: 0 auto; display: grid; gap: 10px; align-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, 44vw), 1fr)); padding: 2px 2px 10px; }
+.rb-buchfeld { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 8px 10px 10px; border-radius: 12px; border: 0; background: #fffdf7;
+  color: var(--text); font: inherit; box-shadow: 0 4px 12px rgba(0,0,0,.3); animation: rbEin .4s ease-out both; transition: transform .15s, box-shadow .15s; cursor: pointer; }
+.rb-buchfeld:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,.35); }
+.rb-buchfeld:active { transform: scale(.98); }
+.rb-buchfeld b { font-family: var(--schrift-kopf); font-size: 15px; line-height: 1.2; color: var(--dunkel); }
+.rb-buchfeld p { margin: 0; font-size: 12.5px; line-height: 1.35; color: var(--leise); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.rb-buchfeldbild { width: 100%; height: 86px; }
+.rb-buchnr { font-size: 11px; color: var(--leise); letter-spacing: .3px; }
+.rb-buchfeld.offen { background: rgba(255,255,255,.1); box-shadow: none; cursor: default; align-items: center; justify-content: center; min-height: 120px; }
+.rb-buchfeld.offen:hover { transform: none; }
+.rb-buchfeld.offen .rb-buchnr { color: rgba(255,255,255,.55); }
+.rb-buchfrage { font-size: 34px; font-weight: 800; color: rgba(255,255,255,.35); }
+.rb-buchgross { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; background: rgba(5,12,22,.6); animation: rbBlende .25s ease-out both; }
+.rb-buchgross .rb-buchkarte { animation: rbAuf .3s ease-out both; color: var(--text); }
+@media (prefers-reduced-motion: reduce) {
+  .rb-tierblase, .rb-buchfeld, .rb-zwding, .rb-zwraum, .rb-zwring { animation: none !important; }
+}
+
+/* ===================== Phase 3 – Korrektur nach QA (25.10.2026) ===================== */
+/* Gruppen-Marke: siehe oben bei den Marken (zwei versetzte Zeichen, MZ 25.10.2026) */
+/* Gruppen-Ansicht: Ausschnitt füllt die Nahansicht, Marken einzeln darüber */
+.rb-nah.gruppe { padding: 8px 10px 10px; }
+.rb-gruppe { position: relative; flex: 1 1 0; min-height: 0; border-radius: 9px; overflow: hidden; background: #222;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); animation: rbGruppeAuf .3s ease-out both; }
+.rb-gruppenbild { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rb-gruppenmarken { position: absolute; inset: 0; }
+@keyframes rbGruppeAuf { from { transform: scale(.88); opacity: 0; } }
+html.rb-ruhig .rb-gruppe { animation: none; }
+/* Einsatzbuch-Kopf auf schmalen Handys: „Zum Menü“ bleibt im Bild (QA Phase 3, 320×640) */
+.rb-buchtitel { min-width: 0; flex-wrap: wrap; column-gap: 8px; }
+@media (max-width: 380px) {
+  .rb-buchansichtkopf { gap: 8px; }
+  .rb-buchtitel h2 { font-size: 23px; }
+  .rb-buchzahl { font-size: 15px; }
+  .rb-buchzurueck { padding: 8px 12px; font-size: 14px; white-space: nowrap; }
+}
+/* Teil einsetzen hochkant: mit Schrittliste bleibt genug Platz zum Ziehen (Fenster wächst sonst über die Leiste) */
+.rb-nah.handgriff:not(.breit) .hg-teilschritte ~ .hg-bild { min-height: 165px; }
+
+/* ===================== Runde nach MZs Spieltest Phase 3 (Developer B, 25.10.2026) ===================== */
+/* Stempel „Auftrag erledigt“: in Hausfarbe, leicht schräg auf das Raumbild gedrückt (ca. 1,5s, Tippen überspringt) */
+.rb-stempel { position: absolute; left: 50%; top: 46%; z-index: 6; pointer-events: none; transform: translate(-50%, -50%) rotate(-11deg);
+  animation: rbStempel .55s cubic-bezier(.2,.9,.3,1.15) both; transition: opacity .35s ease-out; }
+.rb-stempel.weg { opacity: 0; }
+.rb-stempelinnen { display: flex; align-items: center; justify-content: center; gap: .35em; max-width: calc(var(--raum) * .8); padding: .32em .65em;
+  border: max(4px, calc(var(--raum) * .012)) solid var(--haupt); border-radius: 14px; outline: 2px solid var(--haupt); outline-offset: 4px;
+  color: var(--haupt); background: rgba(255,255,255,.86); text-align: center; text-transform: uppercase; letter-spacing: .05em;
+  font: 800 clamp(20px, calc(var(--raum) * .075), 50px) / 1.05 var(--schrift-kopf); box-shadow: 0 6px 22px rgba(0,0,0,.35); }
+/* neutraler Haken statt Logo (MZ-Regel „Logo immer getrennt“) */
+.rb-stempelhaken { flex: none; font-style: normal; font-size: 1.7em; line-height: 1; }
+@keyframes rbStempel { from { opacity: 0; transform: translate(-50%, -50%) rotate(-11deg) scale(1.9); }
+  55% { opacity: 1; transform: translate(-50%, -50%) rotate(-11deg) scale(.94); }
+  78% { transform: translate(-50%, -50%) rotate(-11deg) scale(1.03); } }
+html.rb-ruhig .rb-stempel { animation: rbBlende .25s ease-out both; }
+.rb-stempeldeckel { position: absolute; inset: 0; z-index: 20; cursor: pointer; }
+
+/* Silbentrennung (MZ: „bitte an Umbruch denken“): Kacheln, Knöpfe, Schilder trennen deutsch; dazu weiche Trennstellen aus
+   rohrbruch-trennstellen.md (RB.trenn beim Anzeigen) */
+.rb-teil span, .rb-packteil span, .rb-wahltext, .rb-knopf, .rb-nahkopf b, .rb-fundname, .rb-zwding span, .rb-packpruefung li span,
+.rb-buchkarte h2, .rb-leistenkopf b, .hg-knopf, .hg-teilschritte li {
+  -webkit-hyphens: auto; hyphens: auto; overflow-wrap: break-word; }
+.rb-wahlknopf { -webkit-hyphens: auto; hyphens: auto; }
+
+/* Zwischenfall ZF-25: im Transporter ist nur der Hundekeks antippbar, der Rest ruht */
+.rb-teil.ruht { opacity: .4; cursor: default; }
+/* Hundekeks „in der Hand“ (Leiste) – antippen oder Gustl antippen gibt ihn her */
+.rb-keksdabei { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; }
+.rb-keksdabei canvas { flex: none; }
+
+/* Endbild quer auf flachen Handys (QA-Nachprüfung, 812×375): „Zur Website“ lag teils unter der festen Knopfleiste. Rechte Spalte
+   kompakter (Ausbildungs-Bild kleiner, engere Abstände), damit bei 812×375 alles ohne Scrollen und ohne Überdeckung passt;
+   bei noch flacheren Bildschirmen bleibt nach dem Scrollen nichts verdeckt (Knopfleiste ist das letzte Element der Spalte) */
+@media (orientation: landscape) and (max-height: 520px) {
+  #endSchirm.quer .rb-endkarte { margin-top: 10px; margin-bottom: 10px; padding-top: 12px; padding-bottom: 10px; }
+  #endSchirm.quer .rb-endrechts { gap: 6px; }
+  #endSchirm.quer .rb-endkopf .rb-logoquer { height: 32px; }
+  #endSchirm.quer .rb-ausbildung.mitbild { padding: 6px; gap: 8px; }
+  #endSchirm.quer .rb-ausbildungbild { width: 92px; }
+  #endSchirm.quer .rb-ausbildung.mitbild p { font-size: 13px; }
+  #endSchirm.quer .rb-ausbildungtext { gap: 5px; }
+  .stil-rohrbruch #endSchirm.quer .rb-ausbildung .knopf.rb-webknopf { padding-top: 6px; padding-bottom: 6px; }
+  #endSchirm.quer .rb-endknoepfe { padding-top: 4px; padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+}
+
+/* ===================== Handgriff-Runde (Developer, 25.10.2026) ===================== */
+/* Gestaltete Bedienteile (Drehknopf, Zeitschaltuhr, Stutzen, Taste) brauchen hochkant mehr Höhe als die alten Linien:
+   Leinwand mindestens 180 px – passt das Fenster nicht in den Raum, wächst es wie bei „Teil einsetzen“ über die Leiste */
+.rb-nah.handgriff:not(.breit) .hg-bild:not(.klein) { min-height: 180px; }
+@media (max-height: 460px) { .rb-nah.handgriff:not(.breit) .hg-bild:not(.klein) { min-height: 120px; } }
+
+/* QA Handgriff-Runde (S3): Hilfe-Ring bei ZF-26 (Eleonore versteckt) deutlicher – fester Ring + Puls */
+.rb-zwraum.kaninchen.hilfe { animation: rbZwPulsStark 1.4s ease-in-out infinite; }
+@keyframes rbZwPulsStark {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--akzent) 85%, transparent), 0 0 0 6px rgba(255,255,255,.55); }
+  50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--akzent) 85%, transparent), 0 0 0 14px color-mix(in srgb, var(--akzent) 30%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .rb-zwraum.kaninchen.hilfe { animation: none; box-shadow: 0 0 0 3px var(--akzent), 0 0 0 7px rgba(255,255,255,.6); } }
+
+/* ===================== Runde nach dem Spielertest (Developer, 25.10.2026) ===================== */
+/* Lupen/Hände am Handy: Trefferfläche mindestens 44 px (unsichtbarer Rand um das Zeichen), das Zeichen selbst bleibt so groß */
+/* QA S3 (6): als Quadrat ohne Rundung, 48 px – auch schräg (±21 px in beiden Richtungen) liegt ein Tipp noch darin */
+.rb-marke .treffer { position: absolute; left: 50%; top: 50%; width: max(48px, 100%); height: max(48px, 100%); transform: translate(-50%, -50%);
+  border-radius: 0; pointer-events: auto; }
+/* Handgriff: feste Bedienzeile (Anweisung) und Rückmeldung als eigene Zeile direkt über den Knöpfen */
+.rb-hganweisung { margin: 0; padding: 5px 9px; border-radius: 7px; font-size: 13.5px; line-height: 1.35; font-weight: 600; color: var(--dunkel);
+  background: color-mix(in srgb, var(--haupt) 9%, #fff); border-left: 3px solid var(--haupt); }
+.rb-hganweisung:empty { display: none; }
+.rb-hgmeldung.neu { animation: rbEin .25s ease-out both; }
+/* freier Platz (Schrittfolgen mit kleinem Bild) liegt über Anweisung + Rückmeldung – beide bleiben direkt über den Knöpfen */
+.rb-hgflaeche > .rb-hganweisung:not(:empty), .rb-hgflaeche > .rb-hganweisung:empty + .rb-hgmeldung { margin-top: auto; }
+/* kleinstes Handy hochkant (spiel.js nahPlatz, Höhe ≤ 700): Fenster bis zum Leistenende, Knöpfe unten fest, Bild füllt den Rest */
+.rb-nah.handgriff.voll { overflow-y: auto; }
+.rb-nah.handgriff.voll .rb-hgflaeche { flex: 1 1 0; min-height: 0; }
+.rb-nah.handgriff.voll .hg-bild:not(.klein) { min-height: 120px; }
+.rb-nah.handgriff.voll .hg-teilschritte ~ .hg-bild { min-height: 120px; }
+/* Reiter „Notizen (n)“ im Handgriff-Fenster und aufgeklappte Notizen darüber */
+.rb-nahkopf .rb-hgreiter { flex: none; padding: 5px 10px; font-size: 13px; border-radius: 999px; }
+.rb-nahkopf .rb-hgreiter[hidden] { display: none; }
+.rb-nahkopf .rb-hgreiter.aktiv { background: var(--haupt); color: var(--haupt-text); border-color: var(--haupt); }
+.rb-hgnotizen { position: absolute; left: 8px; right: 8px; top: 50px; max-height: calc(100% - 60px); overflow-y: auto; z-index: 5; padding: 8px 10px 10px;
+  border-radius: 10px; background: #fff; box-shadow: 0 10px 26px rgba(0,0,0,.35); animation: rbAuf .2s ease-out both; }
+.rb-hgnotizen[hidden] { display: none; }
+.rb-hgnotizen h3 { margin: 2px 0 6px; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--leise); }
+.rb-hgnotizen ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.rb-hgnotizen li { font-size: 13px; line-height: 1.3; padding: 5px 8px; background: #f2f4f6; border-radius: 7px; }
+.rb-hgnotizen li b { color: var(--dunkel); }
+.rb-hgnotizen li.ursache { background: color-mix(in srgb, var(--haupt) 14%, #fff); border-left: 4px solid var(--haupt); color: var(--dunkel); font-weight: 700; }
+/* „Richtig erkannt.“ mit Weiter-Knopf daneben (statt automatisch nach 0,9s) */
+.rb-rueck.mitweiter { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
+.rb-rueck .rb-diagweiter { min-width: 130px; }
+/* Einblendungen mit sichtbarem „Weiter“ (Tippen überall geht weiterhin) */
+.rb-szene.titel { flex-direction: column; gap: 16px; }
+.rb-knopf.rb-szeneweiter { min-width: 130px; background: rgba(255,255,255,.92); border-color: rgba(255,255,255,.92); color: var(--dunkel);
+  box-shadow: 0 6px 18px rgba(0,0,0,.3); animation: rbEin .35s .45s ease-out both; }
+.rb-fahrtfunk .rb-fahrtweiter { justify-self: end; min-width: 120px; padding: 8px 14px; animation: rbEin .3s .3s ease-out both; }
+/* flach quer: Weiter oben rechts im Funk-Kasten (neben dem Namen), damit auch zwei Funksätze ohne Abschneiden passen */
+.rb-fahrtfunk { position: relative; }
+@media (orientation: landscape) and (max-height: 520px) { .rb-fahrtfunk .rb-fahrtweiter { position: absolute; top: 12px; right: 12px; padding: 6px 12px; min-width: 96px; } }
+/* Einsatzbuch: Filter-Reiter waagerecht scrollbar mit Hinweis (Rand blendet aus, Pfeil) */
+.rb-buchfilterbox { position: relative; width: min(1100px, 100%); margin: 0 auto; flex: none; }
+.rb-buchfilterbox .rb-buchfilter { width: 100%; scroll-padding: 0 34px; }
+.rb-buchfilterbox.mehr-rechts .rb-buchfilter { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent calc(100% - 6px)); mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent calc(100% - 6px)); }
+.rb-buchfilterbox.mehr-links .rb-buchfilter { -webkit-mask-image: linear-gradient(90deg, transparent 6px, #000 56px); mask-image: linear-gradient(90deg, transparent 6px, #000 56px); }
+.rb-buchfilterbox.mehr-links.mehr-rechts .rb-buchfilter { -webkit-mask-image: linear-gradient(90deg, transparent 6px, #000 56px, #000 calc(100% - 56px), transparent calc(100% - 6px)); mask-image: linear-gradient(90deg, transparent 6px, #000 56px, #000 calc(100% - 56px), transparent calc(100% - 6px)); }
+.rb-buchpfeil { position: absolute; top: 50%; transform: translateY(calc(-50% - 2px)); width: 30px; height: 30px; border-radius: 50%; border: 0; padding: 0;
+  display: none; place-items: center; background: #fff; color: var(--dunkel); font: 800 20px/1 system-ui, sans-serif; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+.rb-buchpfeil.links { left: 0; } .rb-buchpfeil.rechts { right: 0; }
+.rb-buchfilterbox.mehr-links .rb-buchpfeil.links, .rb-buchfilterbox.mehr-rechts .rb-buchpfeil.rechts { display: grid; }
+/* Endbild nach dem Spielertest: Aufschlüsselung als Kacheln, Bewertungsstufen, Knöpfe nebeneinander, Manometer passt sich an */
+.rb-manobox { width: var(--mano, min(74vw, 270px)); }
+#endSchirm.quer .rb-manobox { width: var(--mano, min(36vw, 260px, calc(100vh - 210px))); min-width: 0; }
+.rb-endteile { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; width: 100%; }
+.rb-endteile[hidden] { display: none; }
+.rb-endteil { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 5px 2px 6px; border-radius: 9px; background: #f1f3f5;
+  font-variant-numeric: tabular-nums; animation: rbEin .4s ease-out both; min-width: 0; }
+.rb-endteil span { font-size: 11px; font-weight: 700; letter-spacing: .3px; color: var(--leise); text-transform: uppercase; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.rb-endteil b { font-family: var(--schrift-kopf); font-size: 19px; line-height: 1.1; color: var(--dunkel); }
+.rb-endteil small { font-size: 11px; color: var(--leise); }
+.rb-endteil.schwach b { color: var(--falsch); }
+.rb-endteil.tipp b { color: var(--falsch); }
+.rb-endstufen { margin: 0; font-size: 11.5px; line-height: 1.4; color: var(--leise); text-align: center; animation: rbEin .4s 1.9s ease-out both; }
+.rb-endstufen[hidden] { display: none; }
+.rb-endstufen .jetzt { color: var(--haupt); font-weight: 800; }
+@media (max-width: 360px) { .rb-endteil span { font-size: 9.5px; letter-spacing: 0; } .rb-endteil b { font-size: 17px; } }
+.rb-endknoepfe { grid-auto-flow: column; grid-auto-columns: 1fr; }
+.stil-rohrbruch .rb-endknoepfe .knopf { padding-left: 8px; padding-right: 8px; }
+/* passt die Karte trotz kleinerem Manometer nicht: Knopfleiste nicht fest, sondern am Ende der Karte (nichts wird verdeckt) */
+#endSchirm.lang .rb-endknoepfe { position: static; margin: 0; padding: 4px 0 0; box-shadow: none; background: none; }
+/* Endbild kompakter (Spielertest 25.10.2026): Bewertung + Zeit in einer Zeile, engere Ränder, kleinerer Website-Knopf */
+.rb-endbewertung { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; }
+.stil-rohrbruch #endSchirm:not([hidden]) { padding: 10px 0; }
+.rb-endkarte { padding: 14px 16px 14px; }
+.rb-endknoepfe { margin: 0 -16px -6px; padding: 6px 16px calc(8px + env(safe-area-inset-bottom)); }
+.rb-endkopf .rb-logoquer { height: 34px; }
+.rb-endteil { padding: 4px 2px 5px; }
+.rb-endteil b { font-size: 18px; }
+.stil-rohrbruch .rb-ausbildung .knopf.rb-webknopf { padding-top: 7px; padding-bottom: 7px; font-size: 15px; }
+#endSchirm .ueberschrift { line-height: 1.15; }
+/* flach quer (Handy quer): Bewertung und Zeit rechts neben dem Manometer, Aufschlüsselung darunter – passt ohne Scrollen */
+@media (orientation: landscape) and (max-height: 520px) {
+  #endSchirm.quer .rb-endlinks { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "mano bew" "teile teile" "stufen stufen";
+    align-items: center; column-gap: 12px; row-gap: 8px; }
+  #endSchirm.quer .rb-manobox { grid-area: mano; width: var(--mano, min(150px, calc(100vh - 225px))); }
+  #endSchirm.quer .rb-endbewertung { grid-area: bew; flex-direction: column; align-items: flex-start; gap: 8px; }
+  #endSchirm.quer .rb-endbewertung .ueberschrift { font-size: 24px; text-align: left; }
+  #endSchirm.quer .rb-endteile { grid-area: teile; }
+  #endSchirm.quer .rb-endstufen { grid-area: stufen; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .stil-rohrbruch #endSchirm.quer:not([hidden]) { padding: 4px 0; }
+  #endSchirm.quer .rb-endkarte { margin-top: 6px; margin-bottom: 6px; }
+}
+
+/* ===================== Fachbegriffe (Spielertest-Runde, Abschnitt B, 25.10.2026) ===================== */
+/* dezent gepunktet unterstrichen, antippbar (Erklärfenster); MZ: Fachbegriffe werden nie ersetzt, nur erklärt */
+.rb-fachwort { text-decoration-line: underline; text-decoration-style: dotted; text-decoration-thickness: 1.5px; text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, currentColor 55%, transparent); text-decoration-skip-ink: none; cursor: help; border-radius: 3px;
+  -webkit-tap-highlight-color: transparent; transition: background-color .15s; }
+.rb-fachwort:hover, .rb-fachwort.offen { background: color-mix(in srgb, var(--haupt) 14%, transparent); text-decoration-color: currentColor; }
+.rb-fachwort:focus-visible { outline: 2px solid var(--haupt); outline-offset: 1px; }
+/* Erklärfenster am Wort: Bild links, Begriff und ein Satz rechts */
+.rb-erklaerpop { position: fixed; z-index: 70; width: min(320px, calc(100vw - 16px)); display: flex; gap: 10px; align-items: center; padding: 10px 12px;
+  border-radius: 12px; background: #fff; color: var(--text); box-shadow: 0 10px 28px rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.06);
+  animation: rbAuf .18s ease-out both; cursor: pointer; }
+.rb-erklaerbild { flex: none; width: 72px !important; height: 72px !important; border-radius: 10px; background: #eef0f2; }
+.rb-erklaertext { min-width: 0; display: grid; gap: 3px; }
+.rb-erklaertext b { font-family: var(--schrift-kopf); font-size: 16px; color: var(--dunkel); line-height: 1.2; -webkit-hyphens: auto; hyphens: auto; overflow-wrap: break-word; }
+.rb-erklaertext p { margin: 0; font-size: 14px; line-height: 1.4; }
+html.rb-ruhig .rb-erklaerpop { animation: none; }
+/* Azubi: Ursachen-Knopf zweizeilig – oben Alltagssprache, darunter der Fachbegriff-Text (vollständig, gut lesbar) */
+.rb-knopf.option.zweizeilig { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.rb-knopf.option .rb-alltag { font-size: 15px; font-weight: 700; line-height: 1.3; }
+.rb-knopf.option .rb-fachtext { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--dunkel); }
+.rb-knopf.option.richtig .rb-fachtext { color: #fff; }
+.rb-nah.diagnose.breit .rb-knopf.option .rb-alltag { font-size: 14px; }
+.rb-nah.diagnose.breit .rb-knopf.option .rb-fachtext { font-size: 13px; }
+
+/* ===================== QA Spielertest-Runde, S3 (25.10.2026) ===================== */
+/* (4) Schrittfolgen (Teil austauschen, Dichtung tauschen) flach quer: Schritt-Knöpfe rechts dreispaltig und kompakt, erledigte
+   Schritte links unter den Bildern – alle Knöpfe ohne Scrollen sichtbar (812×375 mit 8 Schritten) */
+.rb-nah.handgriff.breit:has(.hg-knoepfe.wahl) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr); grid-template-rows: auto auto auto auto auto 1fr;
+  grid-template-areas: "kopf kopf" "bild hinweis" "bild notiz" "bild anweisung" "bild meldung" "schritte knoepfe"; row-gap: 6px; }
+.rb-nah.handgriff.breit .hg-knoepfe.wahl { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; align-self: start; }
+.rb-nah.handgriff.breit .hg-knoepfe.wahl .hg-knopf { font-size: 12.5px; padding: 6px 5px; line-height: 1.2; border-radius: 8px; }
+.rb-nah.handgriff.breit .hg-schritte { align-self: start; font-size: 12px; }
+/* Abfluss: nach einem Fehltipp kurz gesperrt (Nachtest 25.10.2026) */
+.hg-knopf.gesperrt { opacity: .55; transform: scale(.97); transition: opacity .1s; }

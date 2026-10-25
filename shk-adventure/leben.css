@@ -1,0 +1,48 @@
+/* Rohrbruch – lebender Hintergrund (leben.js): Tiere, Posenwechsel, Reaktionen, leuchtende Augen (Spieltest Phase 3, MZ 25.10.2026).
+   Aufbau: .rb-tierbox (Fußpunkt im Raum, Spiegelung) > .rb-tierpose (Größe, Überblendung) > img (kleine Bewegungen) + .rb-tieraugen.
+   Höhen in cqh der Ebene .rb-leben (Anteil der Raumhöhe = Wert in leben.js POSEN). Alles ruhig, nie hektisch. */
+.rb-leben { container-type: size; }
+.rb-tierbox { position: absolute; width: 0; height: 0; transition: opacity .7s ease; }
+.rb-tierbox.gespiegelt { transform: scaleX(-1); }
+.rb-tierbox.rein { animation: rbLebenRein 1.1s ease-out both; }
+.rb-tierbox.weg { opacity: 0; }
+@keyframes rbLebenRein { from { opacity: 0; translate: 0 6px; } }
+
+.rb-tierpose { position: absolute; left: 0; bottom: 0; height: calc(var(--h) * 100cqh); transform: translateX(-50%); transition: opacity .6s ease; }
+.rb-tierpose.neu, .rb-tierpose.weg { opacity: 0; }
+.rb-tierpose img { display: block; height: 100%; width: auto; max-width: none; transform-origin: 50% 100%; user-select: none; -webkit-user-drag: none;
+  filter: drop-shadow(0 6px 6px rgba(0,0,0,.35)); transition: filter .8s ease; }
+
+/* Kaninchen Eleonore (nur WP, im Freigehege): kleineres Tier, kleinerer Schatten; vordere Gitterteile liegen über ihr */
+.rb-tierbox.eleonore .rb-tierpose img { filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+.rb-gehegevorn { position: absolute; pointer-events: none; user-select: none; transition: filter .8s ease; }
+.rb-gehegevorn[hidden] { display: none; }
+.rb-raum.dunkel .rb-gehegevorn, .rb-raum.leben-dunkel .rb-gehegevorn { filter: brightness(.38) saturate(.6); }
+
+/* kleine Bewegungen der Reaktionen */
+.rb-tierpose img.anim-schnurr { animation: rbSchnurr 1s ease-in-out 3; }        /* Mimi schnurrt: sanftes Wippen */
+.rb-tierpose img.anim-wedeln { animation: rbWedeln .36s ease-in-out 6; }        /* Gustl freut sich: kleines Wackeln */
+.rb-tierpose img.anim-hopser { animation: rbHopser .75s cubic-bezier(.3,.8,.4,1) 1; }   /* Mimi springt kurz auf */
+.rb-tierpose img.anim-neigen { animation: rbNeigen 1.6s ease-in-out 1; }        /* Gustl legt den Kopf schief */
+@keyframes rbSchnurr { 0%, 100% { scale: 1 1; } 50% { scale: 1.012 .982; } }
+@keyframes rbWedeln { 0%, 100% { rotate: 0deg; } 30% { rotate: -1.4deg; } 70% { rotate: 1.4deg; } }
+@keyframes rbHopser { 0% { translate: 0 0; } 40% { translate: 0 -9%; } 100% { translate: 0 0; } }
+@keyframes rbNeigen { 0%, 100% { rotate: 0deg; } 35%, 70% { rotate: 1.5deg; } }
+.rb-tierpose img.anim-atmen { animation: rbAtmen 1.4s ease-in-out 3; }          /* Eleonore liegt entspannt: ruhiges Atmen */
+@keyframes rbAtmen { 0%, 100% { scale: 1 1; } 50% { scale: 1.008 1.04; } }
+
+/* Licht aus (ZF-07/ZF-17): Tier im Dunkeln, Mimis Augen leuchten sanft und blinzeln ab und zu */
+.rb-raum.dunkel .rb-tierpose img, .rb-raum.leben-dunkel .rb-tierpose img { filter: brightness(.26) saturate(.5) drop-shadow(0 6px 6px rgba(0,0,0,.35)); }
+.rb-tieraugen { position: absolute; inset: 0; pointer-events: none; }
+.rb-tieraugen i { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; min-width: 4px; min-height: 4px;
+  background: radial-gradient(circle, rgba(252,255,200,1) 0, rgba(205,255,120,.95) 38%, rgba(160,235,80,0) 74%);
+  box-shadow: 0 0 6px 2px rgba(190,255,110,.5), 0 0 14px 4px rgba(170,240,90,.22);
+  animation: rbAugenAn 1.4s ease-out both, rbBlinzeln 6s 2s ease-in-out infinite; }
+@keyframes rbAugenAn { from { opacity: 0; } }
+@keyframes rbBlinzeln { 0%, 92%, 100% { scale: 1 1; } 95% { scale: 1 .12; } }
+
+/* Bewegung reduzieren: keine Einblend-/Wipp-/Überblend-Bewegung, Augen leuchten ruhig ohne Blinzeln */
+.rb-ruhig .rb-tierbox, .rb-ruhig .rb-tierpose, .rb-ruhig .rb-tierpose img, .rb-ruhig .rb-tieraugen i { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .rb-tierbox, .rb-tierpose, .rb-tierpose img, .rb-tieraugen i { animation: none !important; transition: none !important; }
+}
