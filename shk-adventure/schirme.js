@@ -24,7 +24,10 @@
   titel.classList.add('rb-unsichtbar');
   dzeile.append(dstufe, tafel);
   tafel.querySelector('.name').textContent = 'Bestwert';   // im Display kurz
-  display.append(titel, punkte, unter, dzeile);
+  // MZ (nach dem Release, 25.10.2026): Frage „Findest du den Fehler im System?“ im Display ersatzlos gestrichen (am Handy
+  // abgeschnitten) – Schriftzug größer, darunter Stufe und Bestwert. Die Frage bleibt nur unsichtbar im Dokument (Rahmen schreibt sie).
+  unter.style.setProperty('display', 'none', 'important');
+  display.append(titel, punkte, dzeile, unter);
   unten.append(anleitung, stufentext, los);
   if (menue) unten.append(menue);
   unten.append(quellen);

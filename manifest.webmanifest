@@ -3,7 +3,7 @@
   "short_name": "Rohrbruch",
   "description": "Mini-Adventure: Fehler im System finden und reparieren",
   "lang": "de",
-  "id": "rohrbruch",
+  "id": "rohrbruch-app",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -850,3 +850,7 @@ html.rb-ruhig .rb-erklaerpop { animation: none; }
 .rb-nah.handgriff.breit .hg-schritte { align-self: start; font-size: 12px; }
 /* Abfluss: nach einem Fehltipp kurz gesperrt (Nachtest 25.10.2026) */
 .hg-knopf.gesperrt { opacity: .55; transform: scale(.97); transition: opacity .1s; }
+
+/* Startbild-Display ohne Frage (MZ, 25.10.2026): Schriftzug „Rohrbruch!“ größer, Stufe und Bestwert mit etwas Abstand darunter */
+#startSchirm .rb-display { gap: calc(var(--dw) * .04); }
+#startSchirm .rb-display .rb-punkte { height: calc(var(--dw) * .2); }
