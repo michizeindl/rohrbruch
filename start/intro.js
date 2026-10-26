@@ -153,7 +153,7 @@
 
   // Seite für reduzierte Bewegung bzw. Überspringen
   function endeSeite() {
-    const alle = [S.KOPF[1], S.TITEL[1], S.rohre, ...S.kacheln(), ...S.UNTEN].filter(el => !el.classList.contains('da'));
+    const alle = [S.KOPF[1], S.TITEL[1], S.rohre, ...S.kacheln(), ...S.UNTEN].filter(el => el && !el.classList.contains('da'));
     S.zeigen(alle, ruhig ? 0.04 : 0.05, 0);
     if (!gezeigt.kacheln || ruhig) S.nadeln(ruhig ? 0 : 300);
     gezeigt = { gesamt: true, kacheln: true, unten: true };

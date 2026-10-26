@@ -29,6 +29,9 @@
   texteAnpassen(D);
   // Ausbildungs-Hinweis im Endbild: kunde.js text leer = Satz aus dem Spiel (mit {firma})
   if (K.ausbildung && !K.ausbildung.text && D.rahmen.ausbildung) K.ausbildung.text = D.rahmen.ausbildung;
+  // Praktikums-Hinweis im Abschlussbild (unter 700 Punkten, MZ 25.10.2026) – ebenso aus dem Spiel, wenn kunde.js text leer
+  if (K.praktikum && !K.praktikum.text && D.rahmen.praktikum) K.praktikum.text = D.rahmen.praktikum;
+  [K.ausbildung, K.praktikum].forEach(h => { if (h && !h.knopf && D.rahmen.ausbildungKnopf) h.knopf = D.rahmen.ausbildungKnopf; });
 
   // ---------- Test-Haken (Adresse) ----------
   // #stufe=meister  #einsatz=HK-03 (auch HK-03,HK-05,HK-10)  #variante=A  #figur=huber  #ende=856  #ruhig
@@ -48,9 +51,10 @@
     // ganzeListe: Geselle und Meister packen Hauptwerkzeug + „Dazu packen“, der Azubi nur das Hauptwerkzeug (MZ, 24.10.2026).
     // anzahl: das Spiel nennt die Zahl der Dinge (Geselle). rueckmeldung: sofort sagen, ob ein Teil passt (nicht beim Meister).
     // tempo: [voll bis, 0 ab] Sekunden – beim Meister großzügiger, weil er die ganze Liste selbst zusammenstellt (Vorschlag Supervisor)
-    azubi: { name: 'Azubi', optionen: 3, tipp: true, m2: false, ganzeListe: false, anzahl: false, rueckmeldung: true, tempo: [60, 180] },
-    geselle: { name: 'Geselle', optionen: 4, tipp: false, m2: false, ganzeListe: true, anzahl: true, rueckmeldung: true, tempo: [60, 180] },
-    meister: { name: 'Meister', optionen: 5, tipp: false, m2: true, ganzeListe: true, anzahl: false, rueckmeldung: false, tempo: [90, 240] },
+    // fehler: erlaubte Fehler je Durchgang (Verlierer-Logik, MZ 25.10.2026) – der nächste scheidet aus; hgFehler: Handgriff zählt mit
+    azubi: { name: 'Azubi', optionen: 3, tipp: true, m2: false, ganzeListe: false, anzahl: false, rueckmeldung: true, tempo: [60, 180], fehler: 5, hgFehler: false },
+    geselle: { name: 'Geselle', optionen: 4, tipp: false, m2: false, ganzeListe: true, anzahl: true, rueckmeldung: true, tempo: [60, 180], fehler: 3, hgFehler: false },
+    meister: { name: 'Meister', optionen: 5, tipp: false, m2: true, ganzeListe: true, anzahl: false, rueckmeldung: false, tempo: [90, 240], fehler: 2, hgFehler: true },
   };
   // Punkte (MZ, 24.10.2026): je Einsatz 333 = Ursache 150/75/25/0 + Werkzeug 60 (−20 je Fehlgriff) + Reparieren 60/30/10
   // + Tempo 63 (voll bis 60s, 0 ab 180s; Meister 90s/240s); Tipp −30; mindestens 1 Punkt.
@@ -425,9 +429,14 @@
       const z = RB.werkzeugZelle(n); if (z) dazu(z.b.blatt);
     });
     // gemeinsam (Kundendaten können andere Dateien nennen)
-    ['bilder/startbild.webp', 'bilder/koffer.webp', 'bilder/transporter.webp', K.transporterSeite || 'bilder/transporter-seite.webp',
-      K.logo, K.logoAufHell, K.logoQuer, K.zeichen, K.zeichenWeiss, K.ausbildung && K.ausbildung.bild].forEach(dazu);
-    (RB.fahrtNaechste ? RB.fahrtNaechste(einsaetze.length) : K.firmenbilder || []).forEach(dazu);   // Übergänge: die nächsten Firmenbilder
+    // Stufen-Figur: neutral fürs Zwischenbild, alle Stimmungen fürs Endbild (offline je Durchgang vollständig)
+    Object.values((SF[stufe] && SF[stufe].posen) || {}).forEach(f => dazu(f.bild));
+    [SF[stufe] && SF[stufe].bild, 'bilder/koffer.webp', 'bilder/transporter.webp', K.transporterSeite || 'bilder/transporter-seite.webp',
+      K.logo, K.logoAufHell, K.logoQuer, K.zeichen, K.zeichenWeiss, K.ausbildung && K.ausbildung.bild, K.praktikum && K.praktikum.bild].forEach(dazu);
+    // Übergänge (QA Release 2, S3): alle Firmenbilder ablegen (Musterfirma 8 × 15–40 KB, einmal) – nach einem Neuladen ohne
+    // Verbindung mischt fahrt.js die Reihe neu, „die nächsten“ passten dann nicht mehr. Bei vielen Kundenfotos (> 12) nur die nächsten.
+    const fb = Array.isArray(K.firmenbilder) ? K.firmenbilder : [];
+    (fb.length <= 12 ? fb : RB.fahrtNaechste ? RB.fahrtNaechste(einsaetze.length + 1) : fb).forEach(dazu);
     [1, 2, 3].forEach(n => dazu(figurBild('meister', n)));
     if (RB.klang && RB.klang.dateien) RB.klang.dateien(einsaetze.map(e => e.ort)).forEach(dazu);
     return [...d];
@@ -439,7 +448,7 @@
     durchgangAblegen(plan);
     return plan.fertig.then(einsaetze => {
       try { if (RB.klang) RB.klang.orteVorladen(einsaetze.map(e => e.ort)); } catch (e) { /* egal */ }
-      return { einsaetze, nr: -1, ergebnisse: [], start: performance.now() };
+      return { einsaetze, nr: -1, ergebnisse: [], start: performance.now(), fehler: 0, aus: false };
     });
   }
   function einsatzAnlegen(st, i, benutzt) {
@@ -511,18 +520,111 @@
 
   // ---------- Anzeige oben ----------
   function kopfzeile() {
-    if (!lauf || !E) return R_.anzeige('', '');
+    if (!lauf || !E) { fehlerAnzeige(); return R_.anzeige('', ''); }
     const summe = lauf.ergebnisse.reduce((s, e) => s + e.summe, 0);
     const links = `Einsatz ${E.nr}/${EINSAETZE}`, mitPunkten = lauf.ergebnisse.length > 0;
     // Schmale Handys (320 px): passt „Einsatz 1/3“ neben „313 Punkte“ nicht, steht rechts die Kurzform „313 Pkt.“
     // (geprüft mit dem längsten Stand „1.000“, damit die Kopfzeile nicht mitten im Spiel umspringt; gemeinsam/ bleibt unverändert)
     let rechts = mitPunkten ? punkteText(summe) : ST().name;
+    // ausgeschieden: keine Punkte mehr zeigen (der Durchgang zählt 0) – nur noch die Stufe
+    if (lauf.ausgeschieden) { R_.anzeige(links, ST().name); fehlerAnzeige(); return; }
     if (mitPunkten) {
       R_.anzeige(links, punkteText(1000));
       const l = document.querySelector('#anzeige .links');
       if (l && l.scrollWidth > l.clientWidth + 1) rechts = summe.toLocaleString('de-DE') + NBSP + 'Pkt.';
     }
     R_.anzeige(links, rechts);
+    fehlerAnzeige();
+  }
+
+  // ---------- Verlierer-Logik (MZ, 25.10.2026) ----------
+  // Fehler zählen je Durchgang über alle 3 Einsätze: Azubi 5, Geselle 3 erlaubt (nur Ursache und Werkzeug), Meister 2 (dazu
+  // Handgriffe). Ein Fehler ist immer genau das, was auch Punkte kostet:
+  //   Ursache – jede falsche Antwort; Werkzeug – Azubi/Geselle jedes unnötige Teil (einmal je Teil, wie −20), witziger Ablenker
+  //   mit „Ja“; Meister bei „Fertig gepackt“ je fehlendes und je unnötiges Teil; Handgriff (nur Meister) – nicht im ersten Anlauf
+  //   geschafft (Wertung „anlauf2“, 10 Punkte), höchstens 1 je Handgriff, gezählt am Ende des Handgriffs. Kein Fehler: Tipp vom
+  //   Meister, „Stimmt, aber …“ (Azubi), leere Verstecke, „Nein“ beim Fund, ungenauer Handgriff, Zwischenfälle.
+  // Der Fehler über dem Limit scheidet aus: kurz die Rückmeldung, dann die Einblendung „Feierabend vor der Zeit“, dann direkt das
+  // Abschlussbild im Modus „ausgeschieden“ (schirme.js RB.schirme.abschluss, Developer A) – ohne Punkte-Bild, 0 Punkte, kein
+  // Bestwert (Rahmen.ende wird gar nicht aufgerufen). Anzeige: dezente Punkte neben „Einsatz 1/3“ (frei = Ring, verbraucht = gefüllt).
+  const rt = (k, ersatz) => (D.rahmen && D.rahmen[k]) || ersatz;
+  let fehlerEl = null, warnEl = null;
+  function fehlerAnzeige(neu) {
+    const a = document.getElementById('anzeige');
+    if (!a) return;
+    if (!fehlerEl) { fehlerEl = el('div', 'rb-fehler'); fehlerEl.setAttribute('role', 'img'); }
+    // als zweite Zeile unter „Einsatz 1/3“ (in .links; Rahmen.anzeige überschreibt den Text, deshalb jedes Mal wieder anhängen)
+    const l = a.querySelector('.links');
+    if (l && fehlerEl.parentNode !== l) l.append(fehlerEl);
+    if (!lauf || !E) { fehlerEl.hidden = true; return; }
+    const max = ST().fehler, n = Math.min(lauf.fehler, max + 1);
+    fehlerEl.hidden = false;
+    fehlerEl.classList.toggle('letzter', n === max);
+    if (fehlerEl.children.length !== max) { fehlerEl.textContent = ''; for (let i = 0; i < max; i++) fehlerEl.append(el('i')); }
+    [...fehlerEl.children].forEach((x, i) => {
+      const war = x.classList.contains('weg');
+      x.classList.toggle('weg', i < n);
+      if (neu && !war && i < n) { x.classList.remove('neu'); void x.offsetWidth; x.classList.add('neu'); }
+    });
+    const f = t => t.replace('{n}', Math.min(n, max)).replace('{max}', max);
+    fehlerEl.title = f(rt('fehlerAnzeige', 'Fehler {n}/{max}'));
+    fehlerEl.setAttribute('aria-label', f(rt('fehlerAnzeigeLesen', 'Fehler {n} von {max} erlaubt')));
+  }
+  // zählt n Fehler; true = Limit überschritten (der Aufrufer ruft danach ausscheiden())
+  function fehlerZaehlen(n) {
+    if (!lauf || lauf.aus || !(n > 0)) return false;
+    lauf.fehler += n;
+    fehlerAnzeige(true);
+    if (lauf.fehler > ST().fehler) { lauf.aus = true; return true; }
+    if (lauf.fehler === ST().fehler) fehlerWarnung();
+    return false;
+  }
+  // Hinweis beim letzten erlaubten Fehler: kleines Schild unter der Kopfzeile, ca. 4s, über allen Fenstern, Tippen schließt
+  function fehlerWarnung() {
+    if (warnEl) warnEl.remove();
+    const w = warnEl = el('div', 'rb-fehlerwarnung', stufe === 'meister' ? rt('fehlerWarnungMeister', 'Vorsicht – noch ein Fehler, dann ist für heute Schluss.')
+      : rt('fehlerWarnung', 'Vorsicht – noch ein Fehler, dann übernimmt der Meister.'));
+    w.setAttribute('role', 'status');
+    w.addEventListener('click', () => w.remove());
+    document.body.append(w);
+    setTimeout(() => { w.classList.add('weg'); setTimeout(() => w.remove(), 400); }, RB.ruhig ? 5000 : 4200);
+  }
+  // Ausscheiden: sofort alles sperren (Deckel), die Rückmeldung zum Fehler noch kurz stehen lassen, dann die Einblendung
+  // (Uhr steht, Tippen oder „Weiter“ überspringt) und das Abschlussbild. sofort = ohne Pause (nach „Weiter“ in der Packliste).
+  function ausscheiden(sofort) {
+    if (!lauf || lauf.ausgeschieden) return;
+    const l = lauf;
+    l.aus = l.ausgeschieden = true;
+    if (E) { E.phase = 'aus'; E.uhrStopp = true; }
+    const deckel = el('div', 'rb-ausdeckel'); document.body.append(deckel);
+    setTimeout(() => {
+      deckel.remove();
+      if (lauf !== l) return;   // inzwischen neu gestartet
+      nahWeg(); erklaerZu(); frage.hidden = true; meldung('');
+      if (warnEl) { warnEl.remove(); warnEl = null; }
+      kopfzeile();   // Punkte aus der Kopfzeile nehmen (Durchgang zählt 0)
+      klangSzene('titel');
+      const t = el('div', 'rb-titel rb-austitel');
+      t.append(el('small', '', ST().name), el('strong', '', rt('ausgeschiedenTitel', 'Feierabend vor der Zeit')),
+        // Ersatztext (Schlüssel-Vorschlag ausgeschiedenZusatz / ausgeschiedenZusatzMeister für den Text Writer)
+        el('span', 'rb-wzzusatz', stufe === 'meister' ? rt('ausgeschiedenZusatzMeister', 'Zu viele Fehler – für heute ist Schluss.')
+          : rt('ausgeschiedenZusatz', 'Zu viele Fehler – der Meister übernimmt.')));
+      let fertig = false;
+      const los = () => { if (fertig) return; fertig = true; clearTimeout(uhr); if (lauf === l) ausgeschiedenEnde(); };
+      const uhr = setTimeout(los, RB.ruhig ? 1800 : 2800);
+      szeneZeigen('titel ausgeschieden', [t], los);
+    }, sofort ? 0 : RB.ruhig ? 700 : 1200);
+  }
+  function ausgeschiedenEnde() {
+    szeneWeg();
+    try { RB.leben.stop(); } catch (x) { /* Beiwerk */ }
+    E = null; lauf = null;
+    kopfzeile();
+    vorplan = planen();   // für „Nochmal spielen“ schon die nächsten Orte laden
+    rb.hidden = true;
+    klangSzene('ende');   // wie das Endbild: ohne Musik
+    RB.ausgeschieden = (RB.ausgeschieden || 0) + 1;   // Testhilfe
+    if (RB.schirme && RB.schirme.abschluss) RB.schirme.abschluss({ ausgeschieden: true });
   }
 
   // ---------- Szene (ganzer Bildschirm): Titel, Funk, Kundin, Meister, Einsatzbuch ----------
@@ -540,6 +642,60 @@
   function szeneWeg() { szene.hidden = true; szene.textContent = ''; szeneWeiter = null; }
   szene.addEventListener('click', e => { if (szeneWeiter && !e.target.closest('button, a')) { const f = szeneWeiter; f(); } });
 
+  // Zwischenbild nach „An die Arbeit!“ (MZ, 25.10.2026), einmal je Durchgang vor dem ersten Einsatz: 3s die Figur der Stufe
+  // (neutral, Kleidung #00FF00 → Hausfarbe, Logo als eigene Ebene auf der Brustfläche) mit dem Stufentext; dünner
+  // Fortschrittsbalken, Tippen überspringt, Uhr steht (noch kein Einsatz), weniger Bewegung 2s
+  const SF = window.ROHRBRUCH_STUFENFIGUREN || {};
+  const stufenFiguren = {};
+  // Figur einer Stufe in einer Stimmung (neutral, schlecht, gut, begeistert, skeptisch), umgefärbt → Promise auf { url, info }
+  // Fehlt eine Stimmung (Bild noch nicht gestaltet), nimmt sie die Ersatz-Stimmung (begeistert → gut, skeptisch → neutral)
+  const ERSATZ_STIMMUNG = { begeistert: 'gut', skeptisch: 'neutral', gut: 'neutral', schlecht: 'neutral' };
+  function stufenFigurInfo(st, stimmung) {
+    const f = SF[st];
+    if (!f) return null;
+    let s = stimmung || 'neutral';
+    while (s && !(f.posen && f.posen[s])) s = ERSATZ_STIMMUNG[s];
+    return (f.posen && f.posen[s]) || (f.bild ? f : null);
+  }
+  function stufenFigur(st, stimmung) {
+    const f = stufenFigurInfo(st, stimmung);
+    if (!f) return Promise.resolve(null);
+    if (!stufenFiguren[f.bild]) stufenFiguren[f.bild] = RB.bild(f.bild).fertig.then(i => {
+      if (!i) return f.bild;
+      try { return R_.umfaerben(i).toDataURL('image/webp', 0.9); } catch (e) { return f.bild; }
+    });
+    return stufenFiguren[f.bild];
+  }
+  RB.stufenFigur = (stimmung) => ({ info: stufenFigurInfo(stufe, stimmung), url: stufenFigur(stufe, stimmung) });   // für schirme.js (Endbild)
+  function stufenBild() {
+    return new Promise(fertig => {
+      klangSzene('titel');
+      const st = ST(), f = SF[stufe], dauer = RB.ruhig ? 2 : 3;
+      const box = el('div', 'rb-stufenbild');
+      const platz = el('div', 'rb-stufenfigur'), fig = el('img', 'rb-figur');
+      fig.alt = st.name; platz.append(fig);
+      if (f) platz.style.setProperty('--seite', f.w / f.h);
+      if (f && f.logo) {
+        const lg = el('img', 'rb-westenlogo'); lg.alt = ''; lg.src = K.zeichenWeiss || K.logo;
+        const [x, y, w, h] = f.logo;
+        Object.assign(lg.style, { left: x * 100 + '%', top: y * 100 + '%', width: w * 100 + '%', height: h * 100 + '%' });
+        platz.append(lg);
+      }
+      stufenFigur(stufe).then(u => { if (u) fig.src = u; });
+      const t = (D.rahmen.stufen || {})[stufe];
+      const karte = el('div', 'rb-stufenkarte');
+      karte.append(el('p', '', 'Stufe ' + st.name + (t ? ': ' + t : '')));
+      const balken = el('div', 'rb-stufenbalken'), fuell = el('i');
+      fuell.style.animationDuration = dauer + 's';
+      balken.append(fuell); karte.append(balken);
+      box.append(platz, karte);
+      let zu = false;
+      const weiter = () => { if (zu) return; zu = true; clearTimeout(uhr); szeneWeg(); fertig(); };
+      const uhr = setTimeout(weiter, dauer * 1000);
+      szeneZeigen('stufe', [box], weiter);
+    });
+  }
+
   // Level-Titel 2,5s, Tippen überspringt (MZ, 22.10.2026)
   function levelTitel(weiter) {
     E.phase = 'titel';
@@ -547,8 +703,9 @@
     const t = el('div', 'rb-titel');
     t.append(el('small', '', ST().name), el('strong', '', D.rahmen.levelTitel.replace('{n}', E.nr).replace('{ort}', E.ortName)));
     let fertig = false;
-    const los = () => { if (fertig) return; fertig = true; clearTimeout(uhr); szeneWeg(); weiter(); };
-    const uhr = setTimeout(los, RB.ruhig ? 1200 : 2600);
+    const e = E;   // Timer nach Neustart/Ausscheiden ins Leere laufen lassen (Hinweis Developer A, 25.10.2026)
+    const los = () => { if (fertig) return; fertig = true; clearTimeout(uhr); if (E !== e) return; szeneWeg(); weiter(); };
+    const uhr = setTimeout(los, RB.ruhig ? 1700 : 3100);   // 3,1s, weniger Bewegung 1,7s (MZ, 25.10.2026)
     szeneZeigen('titel', [t], los);
   }
 
@@ -564,7 +721,8 @@
     const fahrt = RB.fahrtBauen({ saetze, ziel: f.name + ' – ' + E.ortName,
       meister: { name: (K.meister && K.meister.name) || D.meister.name, bild: meisterBild(2) } });
     let fertig = false;
-    const los = () => { if (fertig) return; fertig = true; szeneWeg(); weiter(); };
+    const e = E;
+    const los = () => { if (fertig) return; fertig = true; if (E !== e) return; szeneWeg(); weiter(); };
     szeneZeigen('fahrt', [fahrt.hg, fahrt.el].filter(Boolean), () => fahrt.ueberspringen());
     // „Weiter“ gleich sichtbar (Spielertest 25.10.2026) – Tippen irgendwo geht weiterhin
     const funkBox = fahrt.el.querySelector('.rb-fahrtfunk');
@@ -919,7 +1077,15 @@
     requestAnimationFrame(() => leisteEl.classList.toggle('mehr', leisteEl.scrollTop + leisteEl.clientHeight < leisteEl.scrollHeight - 4));
   }
   leisteEl.addEventListener('scroll', leisteMehr, { passive: true });
+  // Überschrift der Notizen mit Stand (MZ, 25.10.2026): „Notizen 3/9“ = untersuchte / alle Stellen des Einsatzes (CSS: Großbuchstaben);
+  // gilt auch für die Kopie im Ursache-Fenster und den Notizen-Reiter im Handgriff. Die Leiste „Untersucht: …“ bleibt ohne Gesamtzahl.
+  function notizTitel() {
+    if (!E || !E.stellen) return 'Notizen';
+    return 'Notizen ' + E.stellen.filter(x => x.untersucht).length + '/' + E.stellen.length;
+  }
+  function notizKopf() { const h = notizen.querySelector('h3'); if (h) h.textContent = notizTitel(); }
   function leiste() {
+    notizKopf();
     aktionen.textContent = '';
     const ph = E.phase;
     if (ph === 'untersuchen' || ph === 'diagnose') {
@@ -959,6 +1125,7 @@
     li.addEventListener('click', () => lupe(s));
     notizen.querySelector('ul').append(li);
     notizen.hidden = false;
+    notizKopf();
     leisteMehr();
   }
   // erkannte Ursache oben in den Notizen, hervorgehoben (MZ, 24.10.2026); bei zwei Ursachen jede, sobald gefunden
@@ -1430,6 +1597,7 @@
           b.classList.add('falsch'); R_.ton('fehler'); R_.vibrieren(60); signal('fehl');
           E.fehlDiag++;
           rueck.textContent = nb(o.rueck || 'Das passt nicht zu dem, was du gefunden hast.'); rueck.className = 'rb-rueck falsch';
+          if (fehlerZaehlen(1)) { liste.querySelectorAll('button').forEach(x => { x.disabled = true; }); return ausscheiden(); }
           if (!E.fehlgriffGesagt) { E.fehlgriffGesagt = true; meldung(D.figuren[E.figur].name + ': „' + zufall(D.figuren[E.figur].fehlgriff) + '“', 'kunde'); }
           if (E.fehlDiag >= 3) loesungZeigen();
         }
@@ -1438,7 +1606,7 @@
     });
     // Notizen als Kopie daneben – nur sichtbar, wenn die Auswahl quer die Leiste überdeckt
     const notizKopie = el('div', 'rb-diagnotizen');
-    notizKopie.append(el('h3', '', 'Notizen'), notizen.querySelector('ul').cloneNode(true));
+    notizKopie.append(el('h3', '', notizTitel()), notizen.querySelector('ul').cloneNode(true));
     // ✕ nach „Richtig erkannt“ = Weiter (sonst bliebe der Einsatz ohne offene Ursache stehen)
     nahZeigen('diagnose', 'Ursache', [kopf, liste, rueck, notizKopie], () => { if (E.phase === 'erkannt') return werkzeugPhase(); E.phase = 'untersuchen'; leiste(); });
   }
@@ -1503,7 +1671,8 @@
     if (teil) t.append(el('span', 'rb-wzzusatz', teil[2]));
     if (ST().anzahl) t.append(el('small', '', anzahlText()));
     let fertig = false;
-    const los = () => { if (fertig) return; fertig = true; clearTimeout(uhr); szeneWeg(); };
+    const e = E;
+    const los = () => { if (fertig) return; fertig = true; clearTimeout(uhr); if (E !== e || e.phase === 'aus') return; szeneWeg(); };
     const uhr = setTimeout(los, RB.ruhig ? 1200 : 2900);
     szeneZeigen('titel wzfrage', [t], los);
   }
@@ -1617,12 +1786,15 @@
       meldung(NICHT_WICHTIGSTE, '');
       return 'nebenbei';
     }
-    if (!E.falschGenommen.includes(name)) {   // unnötig: −20 (einmal je Teil)
+    let raus = false;
+    if (!E.falschGenommen.includes(name)) {   // unnötig: −20 (einmal je Teil) = 1 Fehler
       E.fehlWerk++; E.falschGenommen.push(name);
       R_.ton('fehler'); R_.vibrieren(60); signal('fehl');
+      raus = fehlerZaehlen(1);
     }
     meldung(unnoetigText(name), 'falsch');
     E.herkunftHinweis = true; leiste();
+    if (raus) ausscheiden();
     return 'falsch';
   }
   function unnoetigText(name) {
@@ -1661,6 +1833,7 @@
     // in der Packliste, damit die Summe der Zeilen genau die Werkzeug-Punkte ergibt (QA Spieltest-Runde, 25.10.2026)
     const schonAbgezogen = E.falschGenommen.filter(n => !E.eingepackt.includes(n));
     E.fehlWerk += fehlt.length + unnoetig.length;
+    const raus = fehlerZaehlen(fehlt.length + unnoetig.length);   // je fehlendes und je unnötiges Teil 1 Fehler
     E.packFehlt = fehlt; E.packUnnoetig = unnoetig.concat(schonAbgezogen);
     E.phase = 'packpruefung';
     nahWeg(); leiste(); markenSetzen();
@@ -1683,7 +1856,7 @@
     ul.append(summe);
     // je ein Satz aus dem Rahmen-Entwurf („Fehlt noch“, „Unnötig eingepackt“)
     const saetze = (fehlt.length ? [T('fehltNoch', 'Da fehlt noch etwas.')] : []).concat(unnoetig.length || schonAbgezogen.length ? [T('unnoetig', 'Das brauchst du hier nicht.')] : []);
-    box.append(el('p', 'rb-packsatz', saetze.join(' ')), ul, knopf('Weiter', 'haupt', () => { nahWeg(); sicherheit(); }));
+    box.append(el('p', 'rb-packsatz', saetze.join(' ')), ul, knopf('Weiter', 'haupt', () => { if (raus) return ausscheiden(true); nahWeg(); sicherheit(); }));   // ausgeschieden: Liste bleibt bis „Weiter“
     nahZeigen('packpruefung', 'Packliste', [box], false);
   }
   // Fund im Raum: leer oder ein Gegenstand (richtiges Teil oder Ablenker) mit Frage Ja/Nein
@@ -1711,8 +1884,10 @@
     const weiter = () => { knoepfe.textContent = ''; knoepfe.append(knopf('Weiter suchen', 'zweit', zu)); fundEinpassen(); };
     knoepfe.append(knopf('Ja', 'haupt', () => {
       if (fund.art === 'ablenker' && fund.witzig) {   // witziger Ablenker: eigene Reaktion, zählt als unnötig (−20)
-        if (!E.falschGenommen.includes(fund.name)) { E.fehlWerk++; E.falschGenommen.push(fund.name); }
+        let raus = false;
+        if (!E.falschGenommen.includes(fund.name)) { E.fehlWerk++; E.falschGenommen.push(fund.name); raus = fehlerZaehlen(1); }
         R_.ton('fehler'); signal('fehl');
+        if (raus) { knoepfe.querySelectorAll('button').forEach(x => { x.disabled = true; }); ausscheiden(); }
         if (stufe === 'geselle') E.herkunftHinweis = true;   // Fehlgriff (Azubi hat ihn schon, Meister nie)
         leiste();
         antwort.textContent = nb(fund.witzig); antwort.className = 'rb-fundantwort witzig';
@@ -2101,10 +2276,13 @@
         || E.stellen.find(s => s.befund && s.anzeige && typeof s.anzeige.display === 'string') || { anzeige: {} }).anzeige.display,
       meldung(text, a) { hgMeldung(z, text, a); },
       fertig(guete) {
+        if (!E || E.phase === 'aus') return;
         E.rep[r.fuer] = guete;
         if (guete === 'genau') signal('gut');
         los();
         nahStopp = null;
+        // Meister: Handgriff nicht im ersten Anlauf geschafft = 1 Fehler (Verlierer-Logik)
+        if (ST().hgFehler && guete === 'anlauf2' && fehlerZaehlen(1)) return ausscheiden(true);
         if (k + 1 < reparaturen().length) sicherheit(k + 1); else entstoeren();
       },
     };
@@ -2135,12 +2313,12 @@
     const quelle = notizen.querySelector('ul'), n = quelle.children.length;
     if (!n) return;
     const kopf = nah.querySelector('.rb-nahkopf');
-    const reiter = knopf('Notizen (' + n + ')', 'zweit rb-hgreiter');
+    const reiter = knopf(notizTitel(), 'zweit rb-hgreiter');
     reiter.setAttribute('aria-expanded', 'false');
     const feld = el('div', 'rb-hgnotizen'); feld.hidden = true;
     const ul = quelle.cloneNode(true);
     ul.querySelectorAll('li').forEach(li => { li.style.cursor = 'default'; });
-    feld.append(el('h3', '', 'Notizen'), ul);
+    feld.append(el('h3', '', notizTitel()), ul);
     const umschalten = auf => { feld.hidden = !auf; reiter.setAttribute('aria-expanded', String(auf)); reiter.classList.toggle('aktiv', auf); };
     reiter.addEventListener('click', () => { R_.ton('klick'); umschalten(feld.hidden); });
     feld.addEventListener('click', () => umschalten(false));
@@ -2333,11 +2511,14 @@
     neu() {
       if (R_.zustand !== 'spiel') return;   // Rahmen ruft neu() auch beim Laden
       lauf = null; E = null;
+      fehlerAnzeige();   // Fehler-Punkte des vorigen Durchgangs weg
       rb.hidden = false;
       layout();
       // Orte des Durchgangs laden (meist schon beim Startbild vorgeladen), dann geht es los
       const nummer = ++laufNummer;
-      neuerLauf().then(l => {
+      // erst das Zwischenbild der Stufe (lädt derweil die Orte), dann Einsatz 1; Test-Haken #phase/#einsatz… ohne Zwischenbild
+      const bildFertig = HASH.phase ? Promise.resolve() : stufenBild();
+      Promise.all([neuerLauf(), bildFertig]).then(([l]) => {
         if (nummer !== laufNummer || R_.zustand !== 'spiel') return;
         lauf = l;
         naechsterEinsatz();
@@ -2357,9 +2538,11 @@
   // einsatz: Testhilfe (nur lesen) – aktueller Einsatz mit Störung, Stellen, Verstecken, Punkten
   // lupe, zwischenfall: Testhilfen (Playwright-Durchlauf aller Störungen bzw. Zwischenfälle)
   RB.spiel = { def, STUFEN, get stufe() { return stufe; }, bewertung, BUCH_GESAMT, buch, endeMelden, HASH, get einsatz() { return E; },
+    get fehler() { return lauf ? lauf.fehler : null; },   // Testhilfe Verlierer-Logik
     lupe: s => lupe(s), zwischenfall: z => { if (E) { E.zwischenfall = z; E.zwFertig = false; E.zwAb = 0; } } };
   R_.spiel(def);
   vorplan = planen();
+  stufenFigur(stufe);   // Figur fürs Zwischenbild schon beim Startbild laden und umfärben
   durchgangAblegen(vorplan);   // schon beim Startbild ablegen: reißt die Verbindung danach ab, ist der Durchgang trotzdem da
   // Einsatzbuch-Ansicht (aus dem vorläufigen Menü: #buch) – Zurück führt zum Menü
   function buchOeffnen(vomMenue) {

@@ -1938,7 +1938,7 @@ window.ROHRBRUCH = {
    "dank": [
     "Vielen Dank. Jetzt trinken Sie aber noch einen Kaffee mit mir.",
     "Wunderbar. Das schreib ich mir gleich ins Buch, mit Datum.",
-    "So ordentlich, wie Sie das machen – da schau ich gern zu. Danke schön.",
+    "So ordentlich, wie Sie das machen – da schau ich gern zu. Dankeschön.",
     "Ich danke Ihnen. Und nehmen Sie ein Stück Kuchen mit, ja?"
    ],
    "fehlgriff": [
@@ -2010,7 +2010,7 @@ window.ROHRBRUCH = {
    "dank": [
     "Danke. Das war effizient – genau so mag ich das.",
     "Sehr gut. Die Rechnung bitte an die Praxisadresse.",
-    "Danke schön. Die Mieter oben werden sich freuen.",
+    "Dankeschön. Die Mieter oben werden sich freuen.",
     "Perfekt. Dann schaffe ich sogar noch meinen nächsten Termin."
    ],
    "fehlgriff": [
@@ -2045,7 +2045,7 @@ window.ROHRBRUCH = {
    ],
    "dank": [
     "Passt schon. Hätt ich auch selber… na ja, eher nicht. Danke.",
-    "Danke schön. Belegte Brote stehen in der Küche, wenn Sie mögen.",
+    "Dankeschön. Belegte Brote stehen in der Küche, wenn Sie mögen.",
     "Passt. Hat ja gar nicht lang gedauert.",
     "Vielen Dank. Gustl mag Sie übrigens."
    ],
@@ -2083,7 +2083,7 @@ window.ROHRBRUCH = {
     "Krass, danke. Das erzähl ich dem Tim, der meinte, das wär voll kompliziert.",
     "Danke. Ich hab echt was gelernt.",
     "Cool, vielen Dank. Noch einen Kaffee? Der ist… ziemlich stark.",
-    "Danke schön. Die Rechnung geht an die Hausverwaltung, oder?"
+    "Dankeschön. Die Rechnung geht an die Hausverwaltung, oder?"
    ],
    "fehlgriff": [
     "Äh, ist das jetzt so richtig? Ich frag nur, ich hab ja keine Ahnung.",
@@ -2119,7 +2119,7 @@ window.ROHRBRUCH = {
    },
    "begruessung": [
     "Gut, dass Sie da sind – bei uns steht quasi das ganze Haus unter Wasser.",
-    "Hallo, kommen Sie rein. Ich komm gerade von der Nacht, also nicht wundern.",
+    "Hallo, kommen Sie rein. Ich komme gerade von der Nachtschicht, also nicht wundern.",
     "Endlich. Ich sag Ihnen, das ist eine Katastrophe – na ja, fast.",
     "Hallo. Ich hab genau eine Stunde, dann muss ich schlafen. Legen wir los."
    ],
@@ -2199,7 +2199,7 @@ window.ROHRBRUCH = {
    "dank": [
     "Danke. Jetzt ist es so still wie sonst. Das ist schön.",
     "Vielen Dank. Und jetzt weiß ich sogar, was das Geräusch war.",
-    "Danke schön. Ich kann endlich wieder in Ruhe arbeiten.",
+    "Dankeschön. Ich kann endlich wieder in Ruhe arbeiten.",
     "Danke. Das klingt jetzt genau richtig – wie früher."
    ],
    "fehlgriff": [
@@ -2275,7 +2275,7 @@ window.ROHRBRUCH = {
    ],
    "dank": [
     "Ein Glück. Die Gäste werden gar nicht merken, dass was war.",
-    "Danke schön. Nehmen Sie ein paar Plätzchen mit, die sind selbst gebacken.",
+    "Dankeschön. Nehmen Sie ein paar Plätzchen mit, die sind selbst gebacken.",
     "Wunderbar, gerade rechtzeitig. Da kommt schon das Auto mit den Gästen.",
     "Danke. Ich schreib Sie gleich in mein Büchlein für Notfälle."
    ],
@@ -2425,9 +2425,9 @@ window.ROHRBRUCH = {
   "frage": "Findest du den Fehler im System?",
   "anleitung": "Drei Einsätze warten auf dich. Tippe im Raum alles an, was verdächtig ist, finde die Ursache und dann das passende Werkzeug. Sauber reparieren zählt mehr als schnell sein.",
   "stufen": {
-   "azubi": "Drei Möglichkeiten zur Wahl und du brauchst nur das wichtigste Werkzeug. Außerdem hilft dir je einmal der Meister.",
-   "geselle": "Vier Lösungen zur Wahl und du packst alles, was du brauchst. Wie viele Dinge es sind, verrät dir das Spiel.",
-   "meister": "Fünf Optionen, kein Tipp, und manchmal musst du gleich zwei Fehler finden. Was in den Koffer soll, weißt du selbst."
+   "azubi": "Drei Möglichkeiten zur Wahl und du brauchst nur das wichtigste Werkzeug. Außerdem hilft dir je einmal der Meister. Fünf Fehler sind erlaubt.",
+   "geselle": "Vier Lösungen zur Wahl und du packst alles, was du brauchst. Wie viele Dinge es sind, verrät dir das Spiel. Drei Fehler sind erlaubt.",
+   "meister": "Fünf Optionen, kein Tipp, und manchmal musst du gleich zwei Fehler finden. Was in den Koffer soll, weißt du selbst. Zwei Fehler sind erlaubt."
   },
   "levelTitel": "Einsatz {n} – {ort}",
   "diagnoseFrage": [
@@ -2460,6 +2460,113 @@ window.ROHRBRUCH = {
    "Nochmal zum Meister"
   ],
   "abbruch": "Einsatz abbrechen? Dieser Durchgang zählt dann 0 Punkte.",
+  "praktikum": "Lust aufs Handwerk? Mach dein Praktikum bei {firma}.",
+  "losKnopf": "An die Arbeit!",
+  "abschlussbild": {
+   "azubi": {
+    "begeistert": [
+     "Wahnsinn, ich habe das wirklich geschafft. Ich bin stolz.",
+     "Besser geht es kaum. Das hätte ich mir nie zugetraut.",
+     "Wow, das lief richtig gut. Das erzähle ich zu Hause."
+    ],
+    "gluecklich": [
+     "Das habe ich gut hinbekommen. Die Kundschaft war zufrieden.",
+     "Sauber gearbeitet. Ich werde langsam richtig gut.",
+     "Es läuft rund. Beim nächsten Mal noch einen Tick besser."
+    ],
+    "neutral": [
+     "Geht in Ordnung. Ich lerne ja noch dazu.",
+     "Es läuft wieder, das zählt. Nächstes Mal klappt mehr.",
+     "Nicht schlecht für einen Azubi. Da ist noch Luft nach oben."
+    ],
+    "skeptisch": [
+     "Hm, das war knapp. Ich sollte die Befunde genauer ansehen.",
+     "Ob das lange hält? Nächstes Mal lasse ich mir mehr Zeit.",
+     "Na ja, es tropft noch etwas. Das kann ich besser."
+    ],
+    "beschaemt": [
+     "Oje, da muss ich wohl noch einiges lernen.",
+     "Das war nichts. Aus Fehlern lernt man ja am meisten.",
+     "Peinlich. Zum Glück gibt es einen zweiten Versuch."
+    ],
+    "ausgeschieden": [
+     "Da hat der Meister wohl übernommen. Nächstes Mal schaffe ich das.",
+     "Zu viele Fehler. Morgen zeige ich, dass ich es kann.",
+     "Das war nichts. Aber jetzt weiß ich, worauf ich achten muss."
+    ]
+   },
+   "geselle": {
+    "begeistert": [
+     "Das war top. Schneller und sauberer geht es kaum.",
+     "Richtig stark heute. Das war ganz großes Handwerk.",
+     "Läuft wie geschmiert. Genau dafür mache ich den Job."
+    ],
+    "gluecklich": [
+     "Sauber gemacht. So darf es gern weitergehen.",
+     "Gute Arbeit, das passt. Der Feierabend ist verdient.",
+     "Das war solide und sauber. Gefällt mir."
+    ],
+    "neutral": [
+     "Passt schon. Es läuft wieder, mehr wollte ich nicht.",
+     "Geht klar. Mit etwas mehr Ruhe wäre mehr drin gewesen.",
+     "Okay, erledigt. Aber da geht noch was."
+    ],
+    "skeptisch": [
+     "Hat geklappt, aber da war noch Luft nach oben.",
+     "Läuft so halb. Die Befunde sehe ich mir genauer an.",
+     "Das war wackelig. Nächstes Mal bleibe ich konzentrierter."
+    ],
+    "sauer": [
+     "Das hat nicht gut geklappt. Ich kann es besser.",
+     "So nicht. Morgen fange ich nochmal von vorn an.",
+     "Ärgerlich, das war nichts. Aber das kriege ich hin."
+    ],
+    "ausgeschieden": [
+     "Zu viele Fehler, das war es. Das passiert mir nicht nochmal.",
+     "Heute war der Wurm drin. Morgen läuft es besser.",
+     "Ärgerlich. Feierabend vor der Zeit, aber ich lerne daraus."
+    ]
+   },
+   "meister": {
+    "begeistert": [
+     "Heute lief einfach alles. So macht Handwerk Spaß.",
+     "Besser geht es kaum. Genau so stelle ich mir das vor.",
+     "Meisterhaft. Nach all den Jahren macht es immer noch Freude."
+    ],
+    "gluecklich": [
+     "Sauber gearbeitet. Die Kundschaft ist zufrieden.",
+     "Gute Arbeit. Das hält, und ich bin zufrieden.",
+     "Das gefällt mir. Genau so soll ein Einsatz laufen."
+    ],
+    "neutral": [
+     "Das war in Ordnung. Aber ich kann mehr.",
+     "Es läuft wieder. Fürs nächste Mal geht noch einiges.",
+     "Solide, mehr nicht. Morgen hole ich mehr heraus."
+    ],
+    "skeptisch": [
+     "Das war nicht mein bester Einsatz. Ich lese die Befunde genauer.",
+     "Da war etwas Glück dabei. Das darf mir nicht reichen.",
+     "So lasse ich das nicht stehen. Ich schaue morgen nochmal hin."
+    ],
+    "sauer": [
+     "Nicht mein Tag. Morgen mache ich das besser.",
+     "Das war nichts, und ich weiß es. Ich fange nochmal an.",
+     "Das ärgert mich. So etwas passiert mir nicht nochmal."
+    ],
+    "ausgeschieden": [
+     "Das war nichts. Auch Meister haben mal einen schlechten Tag.",
+     "Zu viele Fehler. Morgen sehe ich genauer hin.",
+     "Heute ging einiges schief. Zeit für einen Kaffee und einen Neustart."
+    ]
+   }
+  },
+  "ausgeschiedenTitel": "Feierabend vor der Zeit",
+  "fehlerWarnung": "Vorsicht – noch ein Fehler, dann übernimmt der Meister.",
+  "fehlerWarnungMeister": "Vorsicht – noch ein Fehler, dann ist für heute Schluss.",
+  "fehlerAnzeige": "Fehler {n}/{max}",
+  "fehlerAnzeigeLesen": "Fehler {n} von {max} erlaubt",
+  "ausgeschiedenZusatz": "Zu viele Fehler – der Meister übernimmt.",
+  "ausgeschiedenZusatzMeister": "Zu viele Fehler – für heute ist Schluss.",
   "rueckmeldungen": {
    "loesung": [
     "Ich zeig’s dir: {ursache}. Schau dir die Befunde noch mal an.",
@@ -3257,7 +3364,7 @@ window.ROHRBRUCH = {
   "Ich hätt's ja noch laufen lassen. Aber meine Frau hat dann doch angerufen.": "Ich hätt's ja noch laufen lassen. Aber meine Frau hat fei angerufen.",
   "Guten Tag. Kommen Sie rein, die Schuhe können Sie anlassen.": "Grüß Gott. Kommen S' rein, die Schuhe können S' anlassen.",
   "Passt schon. Hätt ich auch selber… na ja, eher nicht. Danke.": "Passt scho. Hätt ich auch selber… na ja, eher nicht. Danke.",
-  "Danke schön. Belegte Brote stehen in der Küche, wenn Sie mögen.": "Servus und danke. Brotzeit steht in der Küche, wenn S' mögen.",
+  "Dankeschön. Belegte Brote stehen in der Küche, wenn Sie mögen.": "Servus und danke. Brotzeit steht in der Küche, wenn S' mögen.",
   "Passt. Hat ja gar nicht lang gedauert.": "Passt scho. Hat ja gar nicht lang gedauert.",
   "Vielen Dank. Gustl mag Sie übrigens.": "Vergelt's Gott. Der Gustl mag Sie übrigens.",
   "Hm. Ist noch nichts. Eilt ja nicht – oder doch ein bisschen.": "Hm. Is noch nix. Eilt ja nicht – oder schon a bisserl.",
@@ -3269,7 +3376,7 @@ window.ROHRBRUCH = {
   "Guten Tag. Was die Gäste gesagt haben, ist allerdings nicht ganz dasselbe.": "Grüß Gott. Was die Gäste gesagt haben, ist fei nicht ganz dasselbe.",
   "Ach, da sind Sie ja. Die Wohnung muss bis drei fertig sein, sonst…": "Mei, da sind Sie ja. Die Wohnung muss bis drei fertig sein, sonst…",
   "Ein Glück. Die Gäste werden gar nicht merken, dass was war.": "Mei, ein Glück. Die Gäste werden fei gar nicht merken, dass was war.",
-  "Danke schön. Nehmen Sie ein paar Plätzchen mit, die sind selbst gebacken.": "Danke schön. Nehmen S' ein paar Plätzchen mit, die sind selbst gebacken.",
+  "Dankeschön. Nehmen Sie ein paar Plätzchen mit, die sind selbst gebacken.": "Dankeschön. Nehmen S' ein paar Plätzchen mit, die sind selbst gebacken.",
   "Ach je, geht's immer noch nicht? Die Gäste kommen doch gleich.": "Mei, geht's immer noch nicht? Die Gäste kommen doch gleich.",
   "Hm, sieht noch nicht so aus. Aber ich versteh davon ja sowieso nur die Hälfte.": "Hm, sieht noch nicht so aus. Aber ich versteh davon ja eh nur die Hälfte.",
   "Nicht? Na, dann noch mal. Ich drück so lange die Daumen.": "Nicht? Na, dann noch mal. Ich halt so lange die Daumen.",

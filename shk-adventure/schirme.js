@@ -1,7 +1,7 @@
 // Rohrbruch – Start- und Endbild im Stil „Heizungs-Display“ (MZ, 24.10.2026, Variante B), sammlungs-eigen:
 // Der Rahmen baut Start- und Endbild wie immer (Texte, Bestwert, Knöpfe); dieses Skript ordnet seine Teile neu an.
-// Start: gestaltete Therme (bilder/startbild.webp, Blende #00FF00 → Hausfarbe), Display mit „Rohrbruch“ in Punktschrift,
-// Frage, Stufe und Bestwert im Display, kleines Manometer (Bestwert) im runden Feld, Logo quer oben links.
+// Start (Variante A, MZ 25.10.2026): Fläche in Hausfarbe, Logo weiß oben links, kleines Bedienteil mit Display (Schriftzug,
+// Stufe, Bestwert) und drei Knöpfen, weiße Karte mit der Anleitung, „An die Arbeit!“/„Zum Menü“.
 // Ende: Karte wie ein Gerätedeckel, großes Manometer – Zeiger dreht auf die Punkte –, Bewertung in Markenfarbe,
 // Zeit als Plakette, Aufschlüsselung, Einsätze, Ausbildungs-Hinweis.
 (function () {
@@ -11,117 +11,51 @@
   function el(tag, klasse, text) { const e = document.createElement(tag); if (klasse) e.className = klasse; if (text != null) e.textContent = text; return e; }
   document.documentElement.classList.add('stil-rohrbruch');
 
-  // ---------- Startbild ----------
+  // ---------- Startbild (Variante A, MZ 25.10.2026) ----------
+  // Fläche in Hausfarbe wie die Startseite, Logo (weiß) frei oben links, kleines Bedienteil (hellgrau, abgerundet) mit dem
+  // Display (Schriftzug „Rohrbruch!“, Stufe, Bestwert) und drei grauen Knöpfen, darunter eine weiße Karte nur mit der Anleitung,
+  // Knöpfe „An die Arbeit!“ (weiß, Schrift in Hausfarbe) und „Zum Menü“ (Umriss). Kein Thermen-Bild, kein Manometer, kein Stufentext
+  // (der steht im Zwischenbild nach „An die Arbeit!“, spiel.js stufenBild).
   const start = $('#startSchirm'), karte = start.querySelector('.karte');
-  const geraet = el('canvas', 'rb-geraet');
-  const logo = el('img', 'rb-logoquer'); logo.src = K.logoQuer || K.logoAufHell || K.logo; logo.alt = K.firma || '';
+  const logo = el('img', 'rb-logoquer'); logo.src = K.logo || K.logoQuer || K.logoAufHell; logo.alt = K.firma || '';
   const display = el('div', 'rb-display'), punkte = el('canvas', 'rb-punkte');
   const dzeile = el('div', 'rb-dzeile'), dstufe = el('span', 'rb-dstufe');
-  const mano = el('canvas', 'rb-startmano');
-  const unten = el('div', 'rb-unten'), stufentext = el('p', 'rb-stufentext');
   const titel = karte.querySelector('.titel'), unter = karte.querySelector('.unter'), anleitung = karte.querySelector('.anleitung');
   const tafel = karte.querySelector('.besttafel'), los = karte.querySelector('#losKnopf'), menue = karte.querySelector('a.knopf'), quellen = karte.querySelector('.quellen');
+  // Startknopf heißt „An die Arbeit!“ (MZ, 25.10.2026) statt „Los geht's“ des Rahmens; Rahmen-Schlüssel losKnopf möglich
+  los.textContent = ((window.ROHRBRUCH || {}).rahmen || {}).losKnopf || 'An die Arbeit!';
   titel.classList.add('rb-unsichtbar');
   dzeile.append(dstufe, tafel);
   tafel.querySelector('.name').textContent = 'Bestwert';   // im Display kurz
-  // MZ (nach dem Release, 25.10.2026): Frage „Findest du den Fehler im System?“ im Display ersatzlos gestrichen (am Handy
-  // abgeschnitten) – Schriftzug größer, darunter Stufe und Bestwert. Die Frage bleibt nur unsichtbar im Dokument (Rahmen schreibt sie).
+  // MZ (nach dem Release, 25.10.2026): Frage im Display ersatzlos gestrichen (Rahmen schreibt sie, bleibt unsichtbar)
   unter.style.setProperty('display', 'none', 'important');
   display.append(titel, punkte, dzeile, unter);
-  unten.append(anleitung, stufentext, los);
-  if (menue) unten.append(menue);
-  unten.append(quellen);
-  start.append(geraet, logo, display, mano, unten);
+  const bedienteil = el('div', 'rb-bedienteil'), knoepfchen = el('div', 'rb-knoepfchen');
+  for (let i = 0; i < 3; i++) knoepfchen.append(el('span'));
+  bedienteil.append(display, knoepfchen);
+  const startkarte = el('div', 'rb-startkarte'); startkarte.append(anleitung);
+  const startknoepfe = el('div', 'rb-startknoepfe'); startknoepfe.append(los); if (menue) startknoepfe.append(menue);
+  const startInhalt = el('div', 'rb-startinhalt'), linksS = el('div', 'rb-startlinks'), rechtsS = el('div', 'rb-startrechts');
+  linksS.append(bedienteil);
+  rechtsS.append(startkarte, startknoepfe, quellen);
+  startInhalt.append(logo, linksS, rechtsS);
+  start.append(startInhalt);
   karte.hidden = true;
 
-  const bild = RB.bild('bilder/startbild.webp');
-  let therme = null;
-  bild.fertig.then(i => { if (i) { therme = R_.umfaerben(i); startLayout(); } });
-  // Maße im Startbild (1024×1024, am Bild gemessen): Display innen, rundes Feld, Gerätefront
-  const DISP = [214, 366, 809, 575], RUND = [715, 708, 60], FRONT = [115, 905], UNTEN_Y = 868;   // UNTEN_Y: unter der Gehäusefuge
+  function stufeSchreiben() { dstufe.textContent = 'Stufe ' + SP.STUFEN[SP.stufe].name; }
 
-  function stufeSchreiben() {
-    const st = SP.STUFEN[SP.stufe];
-    dstufe.textContent = 'Stufe ' + st.name;
-    const t = (window.ROHRBRUCH.rahmen.stufen || {})[SP.stufe];
-    // „Stufe Azubi: …“ wie im Wortlaut von MZ (24.10.2026)
-    stufentext.textContent = t ? 'Stufe ' + st.name + ': ' + t : '';
-  }
-  function bestwert() { try { return +localStorage.getItem('mg:best:' + SP.def.id + ':' + (K.firma || '')) || 0; } catch (e) { return 0; } }
-
-  let L = null;
   function startLayout() {
     if (start.hidden) return;
-    const W = innerWidth, H = innerHeight, quer = W > H * 1.15;
-    const logoH = Math.round(Math.min(46, Math.max(30, H * 0.06)));
-    let s, ix, iy;
-    if (!quer) {
-      const blockH = 250;
-      s = Math.min(W * 0.92 / 595, (H - logoH - 40 - blockH) / (UNTEN_Y - DISP[1]), 1.05);
-      const gesamt = logoH + 18 + (UNTEN_Y - DISP[1]) * s + blockH;
-      const oben = Math.max(12, (H - gesamt) / 2 * 0.8);
-      const dispTop = oben + logoH + 18;
-      ix = W / 2 - 511.5 * s; iy = dispTop - DISP[1] * s;
-      Object.assign(logo.style, { left: Math.max(12, ix + FRONT[0] * s) + 'px', top: oben + 'px', height: logoH + 'px' });
-      const bx = Math.max(14, ix + FRONT[0] * s + 10), bw = Math.min(W - 28, (FRONT[1] - FRONT[0]) * s - 20);
-      Object.assign(unten.style, { left: (W - bw) / 2 + 'px', width: bw + 'px', top: iy + UNTEN_Y * s + 'px', bottom: '' });
-      unten.classList.remove('seite');
-      void bx;
-    } else {
-      s = Math.min((H - 40) / (404 + 70), W * 0.55 / (FRONT[1] - FRONT[0]), 1);
-      const dispTop = Math.max(14, (H - (404 + 70) * s) / 2);
-      ix = W * 0.38 - 511.5 * s; iy = dispTop - DISP[1] * s;
-      Object.assign(logo.style, { left: '14px', top: '12px', height: logoH + 'px' });
-      const x0 = ix + FRONT[1] * s + 18;
-      const bw = Math.min(360, Math.max(180, W - x0 - 16));
-      Object.assign(unten.style, { left: x0 + Math.max(0, (W - x0 - bw) / 2 - 8) * 0.5 + 'px', width: bw + 'px', top: '', bottom: '' });
-      unten.classList.add('seite');
-      unten.style.top = Math.max(12, (H - unten.offsetHeight) / 2) + 'px';
-    }
-    L = { s, ix, iy, W, H };
-    Object.assign(display.style, { left: ix + DISP[0] * s + 'px', top: iy + DISP[1] * s + 'px', width: (DISP[2] - DISP[0]) * s + 'px', height: (DISP[3] - DISP[1]) * s + 'px' });
-    display.style.setProperty('--dw', (DISP[2] - DISP[0]) * s + 'px');
-    const r = RUND[2] * s;
-    Object.assign(mano.style, { left: ix + RUND[0] * s - r + 'px', top: iy + RUND[1] * s - r + 'px', width: 2 * r + 'px', height: 2 * r + 'px' });
-    zeichneGeraet();
+    start.classList.toggle('quer', innerWidth > innerHeight * 1.15 && innerHeight < 620);
+    const dw = display.getBoundingClientRect().width;
+    if (dw) display.style.setProperty('--dw', dw + 'px');
     zeichnePunkte();
-    zeichneMano(bestwert());
-  }
-  function zeichneGeraet() {
-    const { g, w, h } = RB.leinwand(geraet);
-    g.fillStyle = '#e4e0d8'; g.fillRect(0, 0, w, h);
-    if (!therme || !L) return;
-    const { s, ix, iy } = L, b = 1024 * s;
-    // Wand: einfarbig in der Wandfarbe des Bildes, das Bild läuft an den Seiten weich in die Wand aus.
-    // Gehäuse unten: untere Bildzeilen nach unten fortgesetzt (Gerät reicht bis zum Bildschirmrand)
-    g.fillStyle = wandFarbe(); g.fillRect(0, 0, w, h);
-    if (iy + b < h) g.drawImage(therme, 0, 990, 1024, 34, ix, iy + b - 1, b, h - iy - b + 1);
-    if (iy > 0) g.drawImage(therme, 0, 0, 1024, 24, ix, 0, b, iy + 1);
-    g.drawImage(therme, ix, iy, b, b);
-    const rand = Math.min(90, 100 * s);
-    [[ix, ix + rand], [ix + b, ix + b - rand]].forEach(([a, z]) => {
-      if (a <= 0 && z <= 0 || a >= w && z >= w) return;
-      const v = g.createLinearGradient(a, 0, z, 0); v.addColorStop(0, wandFarbe()); v.addColorStop(1, wandFarbe(0));
-      g.fillStyle = v; g.fillRect(Math.min(a, z), 0, Math.abs(z - a), h);
-    });
-  }
-  let wand = null;
-  function wandFarbe(a) {   // mittlere Farbe der Wand links neben der Therme
-    if (!wand && RB.geladen(bild)) {
-      const k = document.createElement('canvas'); k.width = 60; k.height = 400;
-      const kg = k.getContext('2d'); kg.drawImage(bild, 20, 300, 60, 400, 0, 0, 60, 400);
-      const d = kg.getImageData(0, 0, 60, 400).data; let r = 0, gg = 0, bb = 0, n = 0;
-      for (let i = 0; i < d.length; i += 16) { r += d[i]; gg += d[i + 1]; bb += d[i + 2]; n++; }
-      wand = [r / n, gg / n, bb / n].map(Math.round);
-    }
-    const c = wand || [228, 224, 216];
-    return `rgba(${c[0]},${c[1]},${c[2]},${a == null ? 1 : a})`;
   }
   function zeichnePunkte() {
     const { g, w, h } = RB.leinwand(punkte);
     g.clearRect(0, 0, w, h);
-    const farbe = R_.toenen(F.haupt, 0.62);   // helle Display-Farbe wie bisher die Punktschrift
-    // Schriftzug „Rohrbruch!“ (Developer A, ../schrift/schriftzug.js) mit leichtem Leuchten wie ein Display; ohne Datei die Punktschrift
+    const farbe = R_.toenen(F.haupt, 0.62);   // helle Display-Farbe
+    // Schriftzug „Rohrbruch!“ (../schrift/schriftzug.js) mit leichtem Leuchten wie ein Display; ohne Datei die Punktschrift
     if (window.Schriftzug && Schriftzug.zeichne) {
       const sv = Schriftzug.seitenverhaeltnis || 5.76, b = Math.min(w * 0.92, h * sv * 0.96), hb = b / sv;
       g.save(); g.shadowColor = R_.mitAlpha(F.haupt, 0.9); g.shadowBlur = Math.max(4, hb * 0.12);
@@ -129,16 +63,7 @@
       g.restore();
     } else RB.punktschrift(g, 'Rohrbruch', 0, 0, w, h, farbe, 'rgba(255,255,255,.05)');
   }
-  // Hausschrift Barlow für die Leinwand-Zahlen (Manometer): nach dem Laden neu zeichnen
-  if (document.fonts && document.fonts.load) document.fonts.load('700 20px Barlow').then(() => { if (!start.hidden) startLayout(); }).catch(() => {});
-  function zeichneMano(best) {
-    const { g, w, h } = RB.leinwand(mano);
-    g.clearRect(0, 0, w, h);
-    const r = Math.min(w, h) / 2;
-    RB.manometer(g, w / 2, h / 2, r * 0.92, { wert: best, max: 1000, schritt: 200, flaeche: true, ohneZahlen: true });
-    g.fillStyle = '#555'; g.font = `700 ${Math.max(7, r * 0.2)}px Barlow, system-ui, sans-serif`; g.textAlign = 'center';
-    g.fillText(best.toLocaleString('de-DE'), w / 2, h / 2 + r * 0.55);
-  }
+  if (window.ResizeObserver) new ResizeObserver(() => { if (!start.hidden) startLayout(); }).observe(display);
   new MutationObserver(() => { if (!start.hidden) { stufeSchreiben(); requestAnimationFrame(startLayout); } }).observe(start, { attributes: true, attributeFilter: ['hidden'] });
   addEventListener('resize', () => { startLayout(); endLayout(); });
   stufeSchreiben();
@@ -147,7 +72,8 @@
   // ---------- Endbild ----------
   const ende = $('#endSchirm'), ek = ende.querySelector('.karte');
   const endkarte = el('div', 'rb-endkarte');
-  const elogo = el('img', 'rb-logoquer'); elogo.src = logo.src; elogo.alt = K.firma || '';
+  const elogo = el('img', 'rb-logoquer'); elogo.src = K.logoQuer || K.logoAufHell || K.logo;   // Endbild-Karte hell: Logo in Hausfarbe
+  elogo.alt = K.firma || '';
   const links = el('div', 'rb-endlinks'), rechts = el('div', 'rb-endrechts');
   const ue = ek.querySelector('.ueberschrift'), wert = ek.querySelector('.wert'), zeit = ek.querySelector('.zeit'),
     ausw = ek.querySelector('.auswertung'), bw = ek.querySelector('.bestwert'), text = ek.querySelector('.text');
@@ -179,33 +105,119 @@
   // Bewertung und Zeit-Plakette in einer Zeile (bricht auf schmalen Handys um) – spart Höhe
   const bewZeile = el('div', 'rb-endbewertung'); bewZeile.append(ue, zeit);
   links.append(manoBox, bewZeile, teile, stufenZeile);
-  const ausbildung = el('div', 'rb-ausbildung');
-  const A = K.ausbildung;
-  if (A && A.text) {
-    // kleines Bild „Azubi und Meister“ neben dem Satz (MZ, 24.10.2026), für Kunden ein eigenes Team-Foto (kunde.js)
-    if (A.bild) {
-      const ab = el('img', 'rb-ausbildungbild'); ab.alt = ''; ab.decoding = 'async';
-      if (A.umfaerben) RB.bild(A.bild).fertig.then(i => { if (i) ab.src = R_.umfaerben(i).toDataURL('image/webp', 0.85); });
-      else ab.src = A.bild;
-      ausbildung.append(ab);
-      ausbildung.classList.add('mitbild');
-    }
-    const at = el('div', 'rb-ausbildungtext');
-    at.append(el('p', '', String(A.text).replace(/ – /g, ' – ')));
-    // Knopf gefüllt in Hausfarbe mit weißer Schrift (MZ, 24.10.2026); Klasse „zweit“, damit er nicht wie der Hauptknopf leuchtet
-    const ak = el('a', 'knopf zweit rb-webknopf', A.knopf || 'Zur Website');
-    if (A.link) { ak.href = A.link; ak.target = '_blank'; ak.rel = 'noopener'; } else ak.setAttribute('aria-disabled', 'true');
-    at.append(ak);
-    ausbildung.append(at);
-  }
-  // Knöpfe nebeneinander in einer flachen Leiste (vorher untereinander, ca. 150 px hoch – verdeckte den Ausbildungs-Hinweis)
-  const knoepfe = el('div', 'rb-endknoepfe'); knoepfe.append(nk); if (em) knoepfe.append(em); knoepfe.append(kk);
-  rechts.append(text, ausw, bw);
-  if (A && A.text) rechts.append(ausbildung);
-  rechts.append(knoepfe);
+  // Punkte-Bild (MZ, 25.10.2026): nur noch ein Knopf „Weiter“ – er führt zum Abschlussbild (Figur, Sprechblase, Ausbildung bzw.
+  // Praktikum, „Nochmal spielen“/„Zum Menü“). Der Bestwert wird wie bisher beim Erreichen des Punkte-Bilds gespeichert (Rahmen).
+  const weiterKnopf = el('button', 'knopf rb-endweiter', 'Weiter'); weiterKnopf.type = 'button';
+  const knoepfe = el('div', 'rb-endknoepfe'); knoepfe.append(weiterKnopf);
+  rechts.append(text, ausw, bw, knoepfe);
   endkarte.append(kopfzeile, links, rechts);
   ende.append(endkarte);
   ek.hidden = true;
+
+  // ---------- Abschlussbild (MZ, 25.10.2026) ----------
+  // Fläche in Hausfarbe wie das Startbild, Figur der Stufe in der Stimmung nach den Gesamtpunkten (ab 900 begeistert – ab 800
+  // glücklich – ab 700 neutral – ab 550 skeptisch – darunter sauer bzw. beschämt beim Azubi), Sprechblase mit einem zufälligen
+  // Satz, darunter ab 700 der Ausbildungs-, unter 700 der Praktikums-Hinweis (kunde.js ausbildung/praktikum, je an/aus; ist einer
+  // aus, kommt der andere; beide aus = kein Kasten), unten „Nochmal spielen“ und „Zum Menü“. Bleibt stehen (kein Zeittakt).
+  const abschluss = el('div', 'rb-abschluss'); abschluss.hidden = true; abschluss.setAttribute('role', 'dialog');
+  const abInhalt = el('div', 'rb-abschlussinhalt');
+  const abLogo = el('img', 'rb-logoquer'); abLogo.src = K.logo || K.logoQuer; abLogo.alt = K.firma || '';
+  const abBuehne = el('div', 'rb-abbuehne'), abFigur = el('div', 'rb-abfigur'), abFigurBild = el('img', 'rb-figur');
+  const abFigurLogo = el('img', 'rb-westenlogo'); abFigurLogo.alt = ''; abFigurLogo.src = K.zeichenWeiss || K.logo;
+  abFigurBild.alt = ''; abFigur.append(abFigurBild, abFigurLogo);
+  // Gedankenwolke (MZ, 25.10.2026: die Figur ist der Spieler, Satz in Ich-Form) mit drei kleinen Kreisen zur Figur hin;
+  // kunde.js abschlussGedanke: false blendet sie aus
+  const abBlase = el('div', 'rb-abblase rb-gedanke'), abSatz = el('p');
+  const abPunkte = el('div', 'rb-gedankenpunkte'); for (let i = 0; i < 3; i++) abPunkte.append(el('i'));
+  abBlase.append(abSatz, abPunkte); abBuehne.append(abFigur, abBlase);
+  if (K.abschlussGedanke === false) abBlase.hidden = true;
+  const abKasten = el('div', 'rb-abkasten');
+  const abKnoepfe = el('div', 'rb-abknoepfe'); abKnoepfe.append(nk); if (em) abKnoepfe.append(em); abKnoepfe.append(kk);
+  const abRechts = el('div', 'rb-abrechts'); abRechts.append(abKasten, abKnoepfe);
+  abBuehne.append(abRechts);
+  abInhalt.append(abLogo, abBuehne);
+  abschluss.append(abInhalt);
+  document.body.append(abschluss);
+
+  const stimmungFuer = p => p >= 900 ? 'begeistert' : p >= 800 ? 'gut' : p >= 700 ? 'neutral' : p >= 550 ? 'skeptisch' : 'schlecht';
+  // Hinweis-Kasten aus kunde.js (ausbildung bzw. praktikum): Bild (Platzhalter umgefärbt), Satz, Knopf „Zur Website“
+  const hinweisAn = h => !!(h && h.an !== false && h.text);
+  function kastenBauen(h) {
+    abKasten.textContent = '';
+    abKasten.hidden = !h;
+    if (!h) return;
+    const box = el('div', 'rb-ausbildung');
+    if (h.bild) {
+      const ab = el('img', 'rb-ausbildungbild'); ab.alt = ''; ab.decoding = 'async';
+      if (h.umfaerben) RB.bild(h.bild).fertig.then(i => { if (i) ab.src = R_.umfaerben(i).toDataURL('image/webp', 0.85); });
+      else ab.src = h.bild;
+      box.append(ab); box.classList.add('mitbild');
+    }
+    const at = el('div', 'rb-ausbildungtext');
+    at.append(el('p', '', String(h.text).replace(/ – /g, ' – ')));
+    // Knopf gefüllt in Hausfarbe (MZ, 24.10.2026); ohne Link nur sichtbar (Musterfirma)
+    const ak = el('a', 'knopf zweit rb-webknopf', h.knopf || 'Zur Website');
+    if (h.link) { ak.href = h.link; ak.target = '_blank'; ak.rel = 'noopener'; } else ak.setAttribute('aria-disabled', 'true');
+    at.append(ak); box.append(at);
+    abKasten.append(box);
+  }
+  // Satz der Gedankenwolke: rahmen.abschlussbild.<stufe>.<stimmung> (Text Writer, 3 Sätze, Zufall); fehlt er, die Bewertung
+  const TEXT_STIMMUNG = { begeistert: 'begeistert', gut: 'gluecklich', neutral: 'neutral', skeptisch: 'skeptisch', schlecht: 'sauer' };
+  function satzFuer(stimmung, bewertungText, ausgeschieden) {
+    const A = ((window.ROHRBRUCH && window.ROHRBRUCH.rahmen && window.ROHRBRUCH.rahmen.abschlussbild) || {})[SP.stufe] || {};
+    const liste = (ausgeschieden && A.ausgeschieden) || A[TEXT_STIMMUNG[stimmung]] || (stimmung === 'schlecht' && A.beschaemt) || [];
+    const s = Array.isArray(liste) ? liste[Math.floor(Math.random() * liste.length)] : liste;
+    return s || bewertungText || '';
+  }
+  let abschlussDaten = null;
+  function abschlussVorbereiten(p, info) {
+    info = info || {};
+    const stimmung = info.ausgeschieden ? 'schlecht' : stimmungFuer(p);
+    abschlussDaten = { p, stimmung };
+    const f = RB.stufenFigur && RB.stufenFigur(stimmung);
+    abFigur.hidden = !(f && f.info);
+    if (!abFigur.hidden) {
+      abFigur.style.setProperty('--seite', f.info.w / f.info.h);
+      abFigurBild.removeAttribute('src');
+      if (f.info.logo) {
+        const [x, y, w, h] = f.info.logo;
+        Object.assign(abFigurLogo.style, { display: '', left: x * 100 + '%', top: y * 100 + '%', width: w * 100 + '%', height: h * 100 + '%' });
+      } else abFigurLogo.style.display = 'none';
+      f.url.then(u => { if (u) abFigurBild.src = u; });
+    }
+    abSatz.textContent = satzFuer(stimmung, info.bewertung, info.ausgeschieden);
+    const aus = K.ausbildung, prak = K.praktikum;
+    const zuerst = p >= 700 ? [aus, prak] : [prak, aus];
+    kastenBauen(zuerst.find(hinweisAn) || null);
+  }
+  function abschlussLayout() { abschluss.classList.toggle('quer', innerWidth > innerHeight * 1.1); }
+  function abschlussZeigen() {
+    abschlussLayout();
+    abschluss.classList.remove('da');
+    abschluss.hidden = false;
+    abschluss.scrollTop = 0;
+    requestAnimationFrame(() => requestAnimationFrame(() => abschluss.classList.add('da')));
+    (nk || abschluss).focus && nk.focus({ preventScroll: true });
+  }
+  weiterKnopf.addEventListener('click', abschlussZeigen);
+  // „Nochmal spielen“ startet über den Rahmen neu (Endbild verschwindet) – dann auch das Abschlussbild schließen
+  new MutationObserver(() => { if (ende.hidden) abschluss.hidden = true; }).observe(ende, { attributes: true, attributeFilter: ['hidden'] });
+  addEventListener('resize', abschlussLayout);
+  RB.abschlussZeigen = abschlussZeigen;   // Testhilfe
+  // „Nochmal spielen“ schließt das Abschlussbild auch, wenn kein Punkte-Bild davor war (ausgeschieden)
+  if (nk) nk.addEventListener('click', () => { abschluss.hidden = true; });
+  // Schnittstelle für spiel.js (Verlierer-Logik, Developer B):
+  //   RB.schirme.abschluss({ ausgeschieden: true })  – direkt das Abschlussbild ohne Punkte-Bild: Figur unglücklich (Azubi
+  //     beschämt, Geselle/Meister sauer), Gedanke aus rahmen.abschlussbild.<stufe>.ausgeschieden (sonst wie „sauer/beschämt“),
+  //     Praktikums-Kasten (aus: Ausbildung), Knöpfe „Nochmal spielen“/„Zum Menü“
+  //   RB.schirme.abschluss({ punkte: 850, bewertung: 'Sauber gearbeitet' })  – normales Abschlussbild (sonst über „Weiter“)
+  RB.schirme = Object.assign(RB.schirme || {}, {
+    abschluss(opt) {
+      opt = opt || {};
+      abschlussVorbereiten(opt.ausgeschieden ? 0 : (opt.punkte != null ? opt.punkte : zielWert), opt);
+      abschlussZeigen();
+    },
+  });
 
   let zielWert = 0, lauf = 0;
   function nadelStellen(v) {
@@ -251,6 +263,7 @@
   nadelStellen(0);
   RB.endbild = function (p, info) {
     zielWert = p;
+    abschlussVorbereiten(p, info);
     stufeEnde.textContent = 'Stufe ' + info.stufe;
     // Der Rahmen markiert die schwächste Zeile – sind alle Einsätze gleich gut, gibt es keine schwächste
     const erg = info.ergebnisse || [];
@@ -285,7 +298,17 @@
     hatStufen = !stufenZeile.hidden;
   };
   let hatStufen = false;
-  function endLayout() { ende.classList.toggle('quer', innerWidth > innerHeight * 1.15 && innerHeight < 700 || innerWidth > 900); einpassen(); knoepfeFest(); }
+  function endLayout() { ende.classList.toggle('quer', innerWidth > innerHeight * 1.15 && innerHeight < 700 || innerWidth > 900); bewertungEinpassen(); einpassen(); knoepfeFest(); }
+  // Bewertung neben Manometer + Figur (quer flach): ein langes Wort („Meisterleistung“) bekommt die Schrift, die es braucht (bis 15 px)
+  function bewertungEinpassen() {
+    ue.style.fontSize = '';
+    if (ende.hidden) return;
+    let px = parseFloat(getComputedStyle(ue).fontSize);
+    // Textbreite über einen Range messen (der Rahmen kürzt mit „…“, scrollWidth rundet)
+    const breite = () => { const r = document.createRange(); r.selectNodeContents(ue); return r.getBoundingClientRect().width; };
+    const platz = ue.parentElement.clientWidth;
+    while (breite() > platz - 1 && px > 15) { px -= 1; ue.style.fontSize = px + 'px'; }
+  }
   // Spielertest 25.10.2026: nichts liegt unter der festen Knopfleiste. Passt die Karte nicht auf den Bildschirm, wird zuerst das
   // Manometer kleiner (hochkant bis 150 px, quer bis 140 px); reicht das nicht, steht die Knopfleiste ganz normal am Ende der Karte
   // (Klasse lang, nicht mehr fest) – dann wird nur gescrollt, verdeckt wird nichts.

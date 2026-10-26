@@ -30,8 +30,14 @@ window.KUNDE = {
   // bild = kleines Bild „Azubi und Meister“ (MZ, 24.10.2026), beim Kunden ein eigenes Team-Foto (Querformat 3:2, z. B. 600×400);
   // umfaerben: true nur für gestaltete Bilder mit #00FF00-Flächen (Platzhalter), nie für echte Fotos. bild: '' = ohne Bild.
   // text leer = Satz aus dem Spiel („Lust auf echte Einsätze? Mach deine Ausbildung bei {firma}.“, {firma} = firma oben)
-  ausbildung: { text: '', knopf: 'Zur Website', link: '',
+  // Abschlussbild (MZ, 25.10.2026): ab 700 Punkten ausbildung, darunter praktikum; an: false blendet einen aus (dann kommt der
+  // andere), beide aus = kein Kasten. text leer = Satz aus dem Spiel (Praktikum: „Lust aufs Handwerk? Mach dein Praktikum bei {firma}.“)
+  ausbildung: { an: true, text: '', knopf: 'Zur Website', link: '',
     bild: 'bilder/ausbildung.webp', umfaerben: true },
+  praktikum: { an: true, text: '', knopf: 'Zur Website', link: '',
+    bild: 'bilder/praktikum.webp', umfaerben: true },
+  // Abschlussbild: Gedankenwolke der Figur (Satz in Ich-Form) an/aus
+  abschlussGedanke: true,
 
   // Meister-Figur (für Kunden tauschbar: eigenes freigestelltes Foto, eigener Name)
   // nachname = {meister} in den Spieltexten („Lehner hier.“); fehlt er, nimmt das Spiel das letzte Wort von name

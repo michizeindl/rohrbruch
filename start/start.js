@@ -25,11 +25,12 @@
   titel.append(window.Schriftzug.svg());
 
   // ---------- Stufen ----------
-  // Texte der Stufen im Wortlaut von MZ (24.10.2026), wie im Startbild (rahmen.stufen in daten.js) – bei Änderungen beide anpassen
+  // Startseite mit wenig Text (MZ, nach dem Release): je Stufe nur Name + Schwierigkeit + Bestwert;
+  // die langen Stufentexte stehen nur noch im Startbild des Spiels (rahmen.stufen in daten.js)
   const STUFEN = [
-    ['azubi', 'Azubi', 'Drei Möglichkeiten zur Wahl und du brauchst nur das wichtigste Werkzeug. Außerdem hilft dir je einmal der Meister.'],
-    ['geselle', 'Geselle', 'Vier Lösungen zur Wahl und du packst alles, was du brauchst. Wie viele Dinge es sind, verrät dir das Spiel.'],
-    ['meister', 'Meister', 'Fünf Optionen, kein Tipp, und manchmal musst du gleich zwei Fehler finden. Was in den Koffer soll, weißt du selbst.'],
+    ['azubi', 'Azubi', 'Leicht'],
+    ['geselle', 'Geselle', 'Mittel'],
+    ['meister', 'Meister', 'Schwer'],
   ];
   const zahl = n => n.toLocaleString('de-DE');
   const winkel = w => -135 + 270 * Math.max(0, Math.min(1000, w)) / 1000;
@@ -65,19 +66,19 @@
 
   let summe = 0;
   const box = $('stufen'), werte = [];
-  STUFEN.forEach(([id, name, text], i) => {
+  STUFEN.forEach(([id, name, grad], i) => {
     const b = +lesen('mg:best:rohrbruch-' + id + ':' + firma) || 0;
     summe += b; werte.push(b);
     const a = document.createElement('a');
     a.className = 'stufe ein'; a.href = 'shk-adventure/#stufe=' + id; a.dataset.k = i;
-    a.innerHTML = manometer() + '<span class="stufe-kopf"><b class="stufe-name"></b><span class="stufe-best">Dein Bestwert: <span class="wert"><b></b>/1.000 Punkte</span></span></span><p class="stufe-text"></p>';
+    a.innerHTML = manometer() + '<span class="stufe-kopf"><b class="stufe-name"></b><span class="stufe-grad"></span>' +
+      '<span class="stufe-best">Dein Bestwert: <span class="wert"><b></b>/1.000 Punkte</span></span></span>';
     a.querySelector('.stufe-name').textContent = name;
+    a.querySelector('.stufe-grad').textContent = grad;
     a.querySelector('.stufe-best b').textContent = zahl(b);
-    a.querySelector('.stufe-text').textContent = text;
-    a.setAttribute('aria-label', `${name} – Dein Bestwert: ${zahl(b)}/1.000 Punkte. ${text}`);
+    a.setAttribute('aria-label', `${name} – ${grad} – Dein Bestwert: ${zahl(b)}/1.000 Punkte`);
     box.append(a);
   });
-  $('gesamt').textContent = zahl(summe);
   let buch = [];
   try { buch = JSON.parse(lesen('mg:buch:rohrbruch:' + firma) || '[]'); } catch (e) { /* leer */ }
   $('buch').textContent = Array.isArray(buch) ? buch.length : 0;
@@ -149,17 +150,8 @@
   }
   // Kacheln verschieben sich beim Erscheinen (transform) – gemessen wird trotzdem richtig, weil die Animation erst danach läuft;
   // zur Sicherheit nach dem Erscheinen und bei jeder Größenänderung neu zeichnen
-  // Gesamt-Bestwert einzeilig (Abnahme Phase 4: bei 667×375 brach „2.295/3.000 Punkte“ um): zu breit → Schrift kleiner
-  const gesamtEl = document.querySelector('.gesamt');
-  function gesamtEinpassen() {
-    gesamtEl.style.fontSize = '';
-    const breit = gesamtEl.scrollWidth, platz = gesamtEl.clientWidth;
-    if (breit > platz + 0.5) gesamtEl.style.fontSize = (parseFloat(getComputedStyle(gesamtEl).fontSize) * platz / breit * 0.98).toFixed(2) + 'px';
-  }
-  const neu = () => requestAnimationFrame(() => { gesamtEinpassen(); rohreZeichnen(); });
+  const neu = () => requestAnimationFrame(rohreZeichnen);
   if (window.ResizeObserver) new ResizeObserver(neu).observe(vt); else addEventListener('resize', neu);
-  addEventListener('resize', () => requestAnimationFrame(gesamtEinpassen));
-  gesamtEinpassen();
   document.fonts && document.fonts.ready.then(neu);
   box.addEventListener('animationend', neu);
 
@@ -179,7 +171,7 @@
   function zeigen(teile, abstand, start) {   // teile: Elemente, die nacheinander erscheinen
     teile.forEach((el, i) => { el.style.setProperty('--v', ((start || 0) + i * (abstand || 0.08)).toFixed(2) + 's'); el.classList.add('da'); });
   }
-  const KOPF = [logoBox, $('tonKnopf')], TITEL = [titel, document.querySelector('.gesamt')];
+  const KOPF = [logoBox, $('tonKnopf')], TITEL = [titel];   // Gesamt-Bestwert entfällt (MZ, 25.10.2026)
   const UNTEN = [$('buchKnopf'), fuss];
   function allesZeigen() {
     zeigen([...KOPF, ...TITEL, rohre, ...box.children, ...UNTEN], 0.07);

@@ -1,6 +1,6 @@
 // Rohrbruch – Übergang zwischen den Einsätzen (Phase 3, Entscheidung MZ 25.10.2026: statt Karte): der Transporter der Firma
-// (Seitenansicht, #00FF00 in Hausfarbe umgefärbt, Logo als eigene Ebene auf der Seitenwand) fährt ca. 2s seitlich durchs
-// Bild, darunter der Funkspruch des Meisters. Uhr steht, Tippen überspringt; bei „Bewegung reduzieren“ steht er still.
+// (Seitenansicht, #00FF00 in Hausfarbe umgefärbt, Logo und Kontakt als eigene Ebenen auf der Seitenwand) fährt ca. 3s seitlich
+// durchs Bild (hält ca. 1s in der Mitte), darunter der Funkspruch des Meisters. Uhr steht, Tippen überspringt; bei „Bewegung reduzieren“ steht er still.
 // Hintergrund: ein Firmenbild aus kunde.js, weichgezeichnet und aufgehellt (MZ, 25.10.2026). Musik kommt in Phase 4.
 (function () {
   'use strict';
@@ -66,9 +66,40 @@
   reiheFuellen();
   if (firmaReihe.length) firmenbildUrl(firmaReihe[0]);
 
-  // Logofläche auf der Seitenwand (Anteile des Bilds, rohrbruch-bilder.py transporter)
-  const LOGO = [0.47, 0.24, 0.92, 0.46];
-  const DAUER = 2.2;   // Sekunden durchs Bild
+  // Beschriftung der Seitenwand (MZ, Variante B, 25.10.2026), Anteile des Bilds bilder/transporter-seite.webp (640×308),
+  // eingemessen: Schiebetür von x 0,398 bis 0,656 (Türkanten), Seitenwand dahinter bis 0,955; grüne Fläche y 0,12 bis 0,70.
+  //   LOGO_TUER: ganzes Logo im Hochformat (Zeichen über Schrift, weiß) mittig auf der Schiebetür, schneidet keine Türkante
+  //   KONTAKT: Telefon und Internetadresse (weiß, Barlow) mittig auf der Seitenwand hinter der Schiebetür
+  // Eigenes Transporter-Foto des Kunden (kunde.js transporterSeite): Beschriftung standardmäßig aus (das Foto hat eigene
+  // Beschriftung bzw. andere Türkanten); kunde.js transporterBeschriftung: true/false schaltet sie ausdrücklich an oder aus.
+  const LOGO_TUER = [0.428, 0.175, 0.626, 0.655];
+  const KONTAKT = [0.664, 0.24, 0.948, 0.56];
+  const BESCHRIFTEN = K.transporterBeschriftung != null ? K.transporterBeschriftung !== false : !K.transporterSeite;
+  // Telefon: kunde.js telefon, sonst aus kontakt („… – Tel. 089 99998 120“); Internetadresse: kunde.js web
+  // Nummer ohne „Tel.“ – davor steht ein Telefonhörer-Symbol (MZ, 25.10.2026; SVG im Code, weiß, in Schrifthöhe)
+  const TELEFON = (K.telefon || ((/Tel\.?\s*[+\d][\d\s/-]*\d/.exec(K.kontakt || '') || [])[0] || '')).replace(/^\s*(Tel(efon)?\.?:?)\s*/i, '').trim();
+  const HOERER = '<svg class="rb-hoerer" viewBox="2.8 2.3 18.9 19.4" aria-hidden="true"><path fill="currentColor" d="M6.2 2.5c.7-.4 1.6-.2 2 .5l2.1 3.6c.4.7.2 1.5-.4 2L8.4 9.8c1.2 2.5 3.3 4.6 5.8 5.8l1.2-1.5c.5-.6 1.3-.8 2-.4l3.6 2.1c.7.4.9 1.3.5 2l-1.1 1.9c-.6 1.1-1.9 1.7-3.1 1.4C10.5 19.6 4.4 13.5 2.9 6.7c-.3-1.2.3-2.5 1.4-3.1z"/></svg>';
+  // ohne führendes „www.“ (MZ, 25.10.2026: mehr Platz auf der Seitenwand; die Adresse selbst bleibt)
+  const WEB = String(K.web || '').replace(/^\s*(https?:\/\/)?www\./i, '').replace(/^https?:\/\//i, '').replace(/\/$/, '');
+  // Logo im Hochformat weiß: kunde.js logoHochWeiss, sonst logoHoch bzw. kunde/logo-hoch.svg mit weißen Flächen (die SVGs der
+  // Musterfirma färben über var(--mf-zeichen/--mf-schrift, Farbe)); ohne solche Angaben weiß per CSS-Filter (einfarbige Logos)
+  let logoHochUrl = null;
+  function logoHoch() {
+    if (!logoHochUrl) {
+      const a = K.logoHochWeiss || K.logoHoch || 'kunde/logo-hoch.svg';
+      logoHochUrl = K.logoHochWeiss ? Promise.resolve({ url: a, filter: false })
+        : fetch(a).then(r => r.ok ? r.text() : Promise.reject(r.status)).then(t => {
+          if (!/var\(--mf-(zeichen|schrift)\s*,/.test(t)) return { url: a, filter: true };
+          const w = t.replace(/var\(--mf-(zeichen|schrift)\s*,\s*[^)]*\)/g, '#ffffff');
+          return { url: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(w), filter: false };
+        }).catch(() => ({ url: a, filter: true }));
+    }
+    return logoHochUrl;
+  }
+  if (BESCHRIFTEN) logoHoch();   // schon beim Laden vorbereiten
+  const flaeche = (e, f) => Object.assign(e.style, { left: f[0] * 100 + '%', top: f[1] * 100 + '%', width: (f[2] - f[0]) * 100 + '%', height: (f[3] - f[1]) * 100 + '%' });
+  // 3,2s (MZ, Variante B: 1s länger als bisher 2,2s): hereinfahren, ca. 1s in der Mitte stehen, hinausfahren (CSS rbFahrenHalt)
+  const DAUER = 3.2;
 
   // o = { saetze: [Text], meister: { name, bild (Promise<url>) }, ziel: 'Frau Huber – Bad' }
   // → { el, hg (Hintergrund-Ebene, vor el in die Szene), start(fertig), ueberspringen() }
@@ -80,9 +111,26 @@
     const strasse = el('div', 'rb-strasse');
     const wagen = el('div', 'rb-transporter'), bild = el('img', 'rb-transporterbild'); bild.alt = '';
     RB.transporterSeite().then(u => { if (u) bild.src = u; });
-    const logo = el('img', 'rb-transporterlogo'); logo.alt = ''; logo.src = K.logo || K.logoAufHell || '';
-    Object.assign(logo.style, { left: LOGO[0] * 100 + '%', top: LOGO[1] * 100 + '%', width: (LOGO[2] - LOGO[0]) * 100 + '%', height: (LOGO[3] - LOGO[1]) * 100 + '%' });
-    wagen.append(bild, logo);
+    wagen.append(bild);
+    if (BESCHRIFTEN) {
+      const logo = el('img', 'rb-transporterlogo'); logo.alt = '';
+      flaeche(logo, LOGO_TUER);
+      logoHoch().then(l => { logo.src = l.url; logo.classList.toggle('weiss', l.filter); });
+      wagen.append(logo);
+      if (TELEFON || WEB) {
+        const k = el('div', 'rb-transporterkontakt');
+        flaeche(k, KONTAKT);
+        if (TELEFON) {
+          const t = el('span', 'rb-tel');
+          t.innerHTML = HOERER;
+          t.append(document.createTextNode(TELEFON.replace(/ /g, '\u00a0')));
+          t.setAttribute('aria-label', 'Telefon ' + TELEFON);
+          k.append(t);
+        }
+        if (WEB) k.append(el('span', '', WEB));
+        wagen.append(k);
+      }
+    }
     wagen.style.setProperty('--dauer', DAUER + 's');
     strasse.append(wagen);
     const ziel = el('div', 'rb-fahrtziel', o.ziel || '');
@@ -92,10 +140,14 @@
     kopf.append(mb, el('div', 'rb-funkname', (o.meister && o.meister.name) || ''));
     funk.append(kopf);
     (o.saetze || []).forEach((s, i) => { const p = el('p', 'rb-funktext', s); p.style.animationDelay = (0.3 + i * 0.5) + 's'; funk.append(p); });
-    box.append(strasse, ziel, funk);
-    // nach der Durchfahrt so lange stehen bleiben, dass der Funkspruch lesbar ist (ca. 16 Zeichen je Sekunde, höchstens 7s)
+    // Spalte für Ortszeile + Funkspruch (hochkant unsichtbar: display contents; quer flach rechts neben dem Transporter)
+    const spalte = el('div', 'rb-fahrtspalte'); spalte.append(ziel, funk);
+    box.append(strasse, spalte);
+    // nach der Durchfahrt so lange stehen bleiben, dass der Funkspruch lesbar ist (ca. 16 Zeichen je Sekunde); seit Variante B
+    // insgesamt 1s länger (Transporter als Werbefläche): mindestens 3,6s (ruhig 2,6s), Lesezeit +1s, höchstens 8s
     const zeichen = (o.saetze || []).join(' ').length;
-    const gesamt = Math.max(RB.ruhig ? 1.6 : DAUER + 0.4, Math.min(7, 1.2 + zeichen / 16));
+    const gesamt = Math.max(RB.ruhig ? 2.6 : DAUER + 0.4, Math.min(8, 2.2 + zeichen / 16));
+    RB.fahrtGesamt = gesamt;   // Testhilfe
     let uhr = null, fertigFn = null, vorbei = false;
     const ende = () => { if (vorbei) return; vorbei = true; clearTimeout(uhr); const f = fertigFn; fertigFn = null; if (f) f(); };
     return {

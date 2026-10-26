@@ -370,41 +370,73 @@ html.rb-ruhig .hg-knopf.bereit { animation: none; box-shadow: 0 0 0 3px color-mi
 .rb-fragebox { width: min(360px, calc(100% - 32px)); background: #fff; border-radius: 14px; padding: 16px; display: grid; gap: 8px; animation: rbAuf .2s ease-out both; }
 .rb-fragebox p { margin: 0 0 6px; font-size: 16px; line-height: 1.4; }
 
-/* ---------- Startbild „Heizungs-Display“ ---------- */
+/* ---------- Startbild Variante A (MZ, 25.10.2026): blau wie die Startseite, Bedienteil mit Display, Anleitung, Knöpfe ---------- */
 .stil-rohrbruch #startSchirm, .stil-rohrbruch #endSchirm { display: block; padding: 0; background: var(--wand); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .stil-rohrbruch #startSchirm[hidden], .stil-rohrbruch #endSchirm[hidden] { display: none; }
 .rb-unsichtbar { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.rb-geraet { position: absolute; inset: 0; width: 100%; height: 100%; }
-#startSchirm .rb-logoquer { position: absolute; width: auto; animation: rbEin .5s ease-out both; }
-.rb-display { position: absolute; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--dw) * .02);
-  padding: calc(var(--dw) * .03) calc(var(--dw) * .04); color: #cfe9ff; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
-.rb-punkte { width: 100%; height: calc(var(--dw) * .15); flex: none; animation: rbDisplay .9s .2s steps(6) both; }
+.stil-rohrbruch #startSchirm:not([hidden]) { display: flex; overflow-y: auto; background: var(--haupt);
+  background-image: radial-gradient(120% 70% at 15% 0%, rgba(255,255,255,.16), rgba(255,255,255,0) 60%),
+                    radial-gradient(90% 60% at 100% 100%, rgba(0,0,0,.18), rgba(0,0,0,0) 70%); }
+.rb-startinhalt { width: min(440px, 100%); margin: auto; padding: max(14px, env(safe-area-inset-top)) 18px max(16px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 18px; }
+#startSchirm .rb-logoquer { position: static; display: block; height: 40px; width: auto; align-self: flex-start; animation: rbEin .5s ease-out both; }
+.rb-startlinks, .rb-startrechts { display: flex; flex-direction: column; gap: 14px; }
+/* Bedienteil: hellgraue, abgerundete Gerätefront mit Display (Rahmen in Hausfarbe) und drei grauen Knöpfen */
+.rb-bedienteil { position: relative; padding: 14px 14px 16px; border-radius: 22px;
+  background: linear-gradient(180deg, #f4f5f6 0%, #e3e6e9 55%, #d6dadf 100%);
+  box-shadow: 0 14px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -2px 4px rgba(0,0,0,.08);
+  animation: rbEin .5s .08s ease-out both; }
+.rb-display { position: relative; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--dw, 300px) * .04);
+  aspect-ratio: 595 / 209; padding: calc(var(--dw, 300px) * .04) calc(var(--dw, 300px) * .05);
+  border-radius: 12px; border: 5px solid var(--haupt);
+  background: radial-gradient(120% 120% at 30% 20%, #1c2a38 0%, #0d151d 70%);
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.55), inset 0 6px 18px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.7);
+  color: #cfe9ff; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.rb-punkte { width: 100%; height: calc(var(--dw, 300px) * .2); flex: none; animation: rbDisplay .9s .2s steps(6) both; }
 @keyframes rbDisplay { from { opacity: 0; } }
-#startSchirm .rb-display .unter { all: unset; display: block; text-align: center; font-size: clamp(10px, calc(var(--dw) * .05), 22px); font-weight: 700;
-  color: #e6f4ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: rbDisplay .6s .7s steps(4) both; }
 #startSchirm .rb-display .unter::after { display: none; }
 .rb-display > * { flex-shrink: 0; }
-.rb-dzeile { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; white-space: nowrap; font-size: clamp(8px, calc(var(--dw) * .034), 16px);
+.rb-dzeile { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; white-space: nowrap; font-size: clamp(9px, calc(var(--dw, 300px) * .036), 16px);
   color: #9fe8ff; text-transform: uppercase; letter-spacing: .5px; animation: rbDisplay .6s 1s steps(4) both; }
 #startSchirm .rb-dzeile .besttafel { all: unset; display: flex; gap: .5em; align-items: baseline; }
 #startSchirm .rb-dzeile .besttafel .name { font-size: 1em; font-weight: 700; letter-spacing: .5px; opacity: .8; }
 #startSchirm .rb-dzeile .besttafel .zahl { all: unset; font-size: 1.25em; font-weight: 800; color: #fff; }
 #startSchirm .rb-dzeile .besttafel .zahl small { font-size: .75em; color: #9fe8ff; margin: 0; opacity: 1; }
-.rb-startmano { position: absolute; border-radius: 50%; }
-.rb-unten { position: absolute; display: flex; flex-direction: column; gap: 9px; text-align: center; color: #2a3440; }
-.rb-unten > * { animation: rbEin .45s ease-out both; }
-.rb-unten > :nth-child(2) { animation-delay: .1s; } .rb-unten > :nth-child(3) { animation-delay: .2s; } .rb-unten > :nth-child(n+4) { animation-delay: .3s; }
-#startSchirm .rb-unten .anleitung { margin: 0; font-size: 14px; line-height: 1.45; opacity: 1; }
-.rb-stufentext { margin: 0; font-size: 13px; color: var(--dunkel); font-weight: 600; }
-.rb-stufentext:empty { display: none; }
-.stil-rohrbruch .rb-unten .knopf, .stil-rohrbruch .rb-endknoepfe .knopf, .stil-rohrbruch .rb-ausbildung .knopf { margin: 0; }
+.rb-knoepfchen { display: flex; justify-content: center; gap: 9%; margin-top: 14px; }
+.rb-knoepfchen span { width: 13%; max-width: 46px; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fbfbfb 0%, #c9ced3 38%, #8e959c 78%, #6d747b 100%);
+  box-shadow: 0 3px 6px rgba(0,0,0,.28), inset 0 -2px 3px rgba(0,0,0,.18), 0 0 0 3px #cfd4d9; }
+/* Knöpfe in Endbild und Ausbildungs-Hinweis (aus dem früheren Startbild-Block, gelten weiter) */
+.stil-rohrbruch .rb-endknoepfe .knopf, .stil-rohrbruch .rb-ausbildung .knopf { margin: 0; }
 .stil-rohrbruch .knopf.zweit { color: var(--dunkel); background: rgba(255,255,255,.7); border-color: color-mix(in srgb, var(--haupt) 55%, #fff); }
 .stil-rohrbruch .knopf.zweit:hover { background: #fff; }
-#startSchirm .rb-unten .quellen { margin: 0; font-size: 11px; opacity: .6; }
-#startSchirm .rb-unten .quellen:empty { display: none; }
-.rb-unten.seite { text-align: left; }
-.rb-unten .knopf { text-align: center; }
-@media (min-height: 680px) { .rb-unten { gap: 12px; } #startSchirm .rb-unten .anleitung { font-size: 15px; } }
+/* weiße Karte nur mit der Anleitung */
+.rb-startkarte { padding: 16px 18px; border-radius: 16px; background: #fff; color: #1b2430; box-shadow: 0 8px 22px rgba(0,0,0,.22);
+  animation: rbEin .45s .16s ease-out both; }
+#startSchirm .rb-startkarte .anleitung { margin: 0; font-size: 15.5px; line-height: 1.5; opacity: 1; color: #2a3440; text-align: left; }
+.rb-startknoepfe { display: flex; flex-direction: column; gap: 10px; animation: rbEin .45s .24s ease-out both; }
+.stil-rohrbruch #startSchirm .rb-startknoepfe .knopf { margin: 0; text-align: center; white-space: nowrap; }
+.stil-rohrbruch #startSchirm #losKnopf { background: #fff; color: var(--haupt); border-color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+.stil-rohrbruch #startSchirm #losKnopf::after { background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--haupt) 22%, transparent), transparent); }
+.stil-rohrbruch #startSchirm .rb-startknoepfe .knopf.zweit { background: transparent; color: #fff; border-color: rgba(255,255,255,.75); }
+.stil-rohrbruch #startSchirm .rb-startknoepfe .knopf.zweit:hover { background: rgba(255,255,255,.12); }
+#startSchirm .rb-startrechts .quellen { margin: 0; font-size: 11px; color: #fff; opacity: .6; text-align: center; }
+#startSchirm .rb-startrechts .quellen:empty { display: none; }
+@media (min-height: 760px) { .rb-startinhalt { gap: 24px; } #startSchirm .rb-logoquer { height: 46px; } }
+@media (max-width: 359px) { .rb-startinhalt { padding-left: 12px; padding-right: 12px; gap: 14px; } #startSchirm .rb-startkarte .anleitung { font-size: 14.5px; }
+  .rb-startkarte { padding: 13px 14px; } }
+/* quer und flach: Logo + Bedienteil links, Karte + Knöpfe rechts */
+#startSchirm.quer .rb-startinhalt { width: min(900px, 100%); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 26px; row-gap: 10px;
+  grid-template-areas: "logo rechts" "links rechts"; align-items: center; padding: 12px max(22px, env(safe-area-inset-right)) 12px max(22px, env(safe-area-inset-left)); }
+#startSchirm.quer .rb-logoquer { grid-area: logo; height: 34px; align-self: end; }
+#startSchirm.quer .rb-startlinks { grid-area: links; align-self: start; }
+#startSchirm.quer .rb-startrechts { grid-area: rechts; gap: 10px; }
+#startSchirm.quer .rb-bedienteil { padding: 10px 10px 12px; border-radius: 18px; }
+#startSchirm.quer .rb-knoepfchen { margin-top: 10px; }
+#startSchirm.quer .rb-startkarte { padding: 12px 14px; }
+#startSchirm.quer .rb-startkarte .anleitung { font-size: 14px; line-height: 1.42; }
+#startSchirm.quer .rb-startknoepfe { flex-direction: row; }
+#startSchirm.quer .rb-startknoepfe .knopf { flex: 1; padding: 10px 12px; font-size: 16px; }
 
 /* ---------- Endbild: Manometer ---------- */
 /* Karte senkrecht mittig, solange sie passt (margin: auto); ist sie höher als der Bildschirm, beginnt sie oben */
@@ -852,5 +884,230 @@ html.rb-ruhig .rb-erklaerpop { animation: none; }
 .hg-knopf.gesperrt { opacity: .55; transform: scale(.97); transition: opacity .1s; }
 
 /* Startbild-Display ohne Frage (MZ, 25.10.2026): Schriftzug „Rohrbruch!“ größer, Stufe und Bestwert mit etwas Abstand darunter */
-#startSchirm .rb-display { gap: calc(var(--dw) * .04); }
-#startSchirm .rb-display .rb-punkte { height: calc(var(--dw) * .2); }
+
+/* ---------- Zwischenbild nach „Los geht's“ (MZ, 25.10.2026): Figur der Stufe (neutral) + Stufentext, 3s ---------- */
+.rb-szene.stufe { background: var(--haupt); -webkit-backdrop-filter: none; backdrop-filter: none;
+  background-image: radial-gradient(120% 70% at 15% 0%, rgba(255,255,255,.16), rgba(255,255,255,0) 60%),
+                    radial-gradient(90% 60% at 100% 100%, rgba(0,0,0,.18), rgba(0,0,0,0) 70%); }
+.rb-stufenbild { display: flex; flex-direction: column; align-items: center; gap: 18px; width: min(440px, calc(100% - 32px)); max-height: 100%; padding: 12px 0 18px; }
+/* Figur auf hellem Lichtkreis (Kleidung trägt die Hausfarbe – so hebt sie sich von der Fläche ab) */
+.rb-stufenfigur { position: relative; height: min(50vh, 440px); aspect-ratio: var(--seite, .36); flex: none; animation: rbStufeFigur .6s cubic-bezier(.2,.8,.2,1) both; }
+.rb-stufenfigur::before { content: ""; position: absolute; left: 50%; top: 46%; width: 260%; aspect-ratio: 1; transform: translate(-50%, -50%); z-index: -1;
+  border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.62) 0%, rgba(255,255,255,.28) 38%, rgba(255,255,255,0) 68%); }
+.rb-stufenfigur::after { content: ""; position: absolute; left: 50%; bottom: -1.5%; width: 120%; height: 5%; transform: translateX(-50%); z-index: -1;
+  border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.35), rgba(0,0,0,0) 70%); }
+.rb-stufenfigur .rb-figur { filter: drop-shadow(0 6px 10px rgba(0,0,0,.28)); }
+@keyframes rbStufeFigur { from { opacity: 0; transform: translateY(16px) scale(.96); } }
+.rb-stufenkarte { position: relative; overflow: hidden; width: 100%; padding: 16px 18px 20px; border-radius: 16px; background: #fff; color: #1b2430;
+  box-shadow: 0 10px 26px rgba(0,0,0,.25); animation: rbEin .45s .15s ease-out both; }
+.rb-stufenkarte p { margin: 0; font-size: 16.5px; line-height: 1.45; font-weight: 600; text-align: center; color: var(--dunkel); }
+.rb-stufenbalken { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: color-mix(in srgb, var(--haupt) 15%, #fff); }
+.rb-stufenbalken i { display: block; height: 100%; width: 100%; background: var(--haupt); transform-origin: left; animation: rbBalken 3s linear both; }
+@keyframes rbBalken { from { transform: scaleX(0); } }
+@media (max-width: 359px) { .rb-stufenkarte p { font-size: 15px; } .rb-stufenkarte { padding: 13px 14px 17px; } }
+/* quer und flach: Figur links, Karte rechts */
+@media (orientation: landscape) and (max-height: 560px) {
+  .rb-stufenbild { flex-direction: row; width: min(760px, calc(100% - 40px)); gap: 34px; padding: 8px 0; }
+  .rb-stufenfigur { height: min(calc(100vh - 90px), 400px); }
+  .rb-stufenkarte { flex: 1; }
+  .rb-stufenkarte p { text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) { .rb-stufenfigur, .rb-stufenkarte { animation: rbBlende .2s ease-out both; } }
+/* große Bildschirme: Startbild und Zwischenbild etwas größer */
+@media (min-width: 900px) and (min-height: 700px) {
+  .rb-startinhalt { width: min(540px, 100%); }
+  #startSchirm .rb-startkarte .anleitung { font-size: 17px; }
+  #startSchirm .rb-logoquer { height: 52px; }
+  .rb-stufenbild { width: min(520px, calc(100% - 32px)); }
+  .rb-stufenfigur { height: min(56vh, 500px); }
+  .rb-stufenkarte p { font-size: 18px; }
+}
+
+/* ---------- Punkte-Bild: ein Knopf „Weiter“ (MZ, 25.10.2026) ---------- */
+.rb-endknoepfe { display: block; }
+.stil-rohrbruch .rb-endknoepfe .rb-endweiter { width: 100%; margin: 0; }
+
+/* ---------- Abschlussbild (MZ, 25.10.2026): Figur der Stufe (= Spieler), Gedankenwolke, Ausbildung/Praktikum, Knöpfe ---------- */
+.rb-abschluss { position: fixed; inset: 0; z-index: 60; overflow-y: auto; display: flex; background: var(--haupt);
+  background-image: radial-gradient(120% 70% at 15% 0%, rgba(255,255,255,.16), rgba(255,255,255,0) 60%),
+                    radial-gradient(90% 60% at 100% 100%, rgba(0,0,0,.18), rgba(0,0,0,0) 70%); }
+.rb-abschluss[hidden] { display: none; }
+.rb-abschlussinhalt { width: min(460px, 100%); min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 12px;
+  padding: max(14px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+.rb-abschluss .rb-logoquer { height: 38px; width: auto; align-self: flex-start; flex: none; }
+/* Figurhöhe füllt hochkant die freie Höhe: Bildschirm minus Logo, Kasten, Knöpfe, Abstände */
+.rb-abbuehne { --fh: clamp(210px, min(calc(100svh - 372px), calc((100vw - 32px) * 1.3)), 520px); flex: 1; display: grid; grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 1fr auto; grid-template-areas: "figur blase" "rechts rechts"; column-gap: 6px; row-gap: 14px; }
+.rb-abfigur { grid-area: figur; position: relative; height: var(--fh); aspect-ratio: var(--seite, .36); align-self: end; margin-left: 2px; }
+.rb-abfigur[hidden] { display: none; }
+.rb-abfigur::before { content: ""; position: absolute; left: 50%; top: 45%; width: 250%; aspect-ratio: 1; transform: translate(-50%, -50%); z-index: -1;
+  border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,.22) 38%, rgba(255,255,255,0) 68%); }
+.rb-abfigur::after { content: ""; position: absolute; left: 50%; bottom: -1.5%; width: 120%; height: 5%; transform: translateX(-50%); z-index: -1;
+  border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.35), rgba(0,0,0,0) 70%); }
+.rb-abfigur .rb-figur { filter: drop-shadow(0 6px 10px rgba(0,0,0,.28)); }
+.rb-abrechts { grid-area: rechts; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+/* Gedankenwolke: weiche, bauschige Form, drei kleiner werdende Kreise führen zum Kopf der Figur */
+.rb-gedanke { grid-area: blase; position: relative; isolation: isolate; align-self: end; margin: 0 0 calc(var(--fh) * .72) 14px;
+  padding: 14px 16px; background: #fff; color: var(--dunkel); border-radius: 30px 34px 30px 26px;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,.22)); transform-origin: 0 100%; }
+.rb-gedanke[hidden] { display: none; }
+.rb-gedanke::before, .rb-gedanke::after { content: ""; position: absolute; z-index: -1; background: #fff; border-radius: 50%; }
+/* Wolkenbeulen: flache, überlappende Bögen oben und unten rechts */
+.rb-gedanke::before { width: 44%; height: 34px; left: 10%; top: -12px; }
+.rb-gedanke::after { width: 38%; height: 30px; right: 8%; top: -9px; }
+.rb-gedanke p { position: relative; margin: 0; font-size: 16px; line-height: 1.4; font-weight: 600; text-align: center; }
+.rb-gedankenpunkte i { position: absolute; background: #fff; border-radius: 50%; }
+.rb-gedankenpunkte i:nth-child(1) { width: 15px; height: 15px; left: -2px; bottom: -12px; }
+.rb-gedankenpunkte i:nth-child(2) { width: 10px; height: 10px; left: -15px; bottom: -26px; }
+.rb-gedankenpunkte i:nth-child(3) { width: 6px; height: 6px; left: -24px; bottom: -37px; }
+.rb-abkasten[hidden] { display: none; }
+.rb-abkasten .rb-ausbildung { margin: 0; }
+.rb-abknoepfe { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rb-abknoepfe .knopf[hidden] { display: none; }
+/* beide Knöpfe weiß – „Zur Website“ (Hausfarbe) bleibt der einzige farbige Knopf (MZ, 25.10.2026) */
+.stil-rohrbruch .rb-abknoepfe .knopf, .stil-rohrbruch .rb-abknoepfe .knopf.zweit { margin: 0; text-align: center; padding-left: 8px; padding-right: 8px; white-space: nowrap;
+  background: #fff; color: var(--haupt); border-color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,.22); }
+.stil-rohrbruch .rb-abknoepfe .knopf:hover { background: #f3f6fa; }
+.stil-rohrbruch .rb-abknoepfe .knopf::after { background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--haupt) 20%, transparent), transparent); }
+/* quer: Figur links, rechts Gedankenwolke, Kasten, Knöpfe */
+.rb-abschluss.quer .rb-abschlussinhalt { width: min(860px, 100%); padding-left: max(22px, env(safe-area-inset-left)); padding-right: max(22px, env(safe-area-inset-right)); }
+.rb-abschluss.quer .rb-abbuehne { --fh: min(calc(100svh - 96px), 470px); grid-template-rows: auto auto; grid-template-areas: "figur blase" "figur rechts";
+  column-gap: 34px; row-gap: 14px; align-content: center; }
+.rb-abschluss.quer .rb-gedanke { align-self: end; justify-self: start; max-width: min(100%, 440px); margin: 0 0 4px 18px; }
+.rb-abschluss.quer .rb-abrechts { align-self: start; }
+@media (max-height: 520px) {
+  .rb-abschluss.quer .rb-abschlussinhalt { gap: 4px; padding-top: 8px; padding-bottom: 8px; }
+  .rb-abschluss.quer .rb-logoquer { height: 28px; }
+  .rb-abschluss.quer .rb-abbuehne { --fh: calc(100svh - 64px); row-gap: 10px; }
+  .rb-abschluss.quer .rb-abrechts { gap: 8px; }
+  .rb-abschluss.quer .rb-gedanke { padding: 11px 14px; } .rb-abschluss.quer .rb-gedanke p { font-size: 15px; }
+  .rb-abschluss.quer .rb-abknoepfe .knopf { padding-top: 9px; padding-bottom: 9px; font-size: 16px; }
+}
+@media (max-width: 359px) { .rb-abbuehne { --fh: clamp(190px, calc(100svh - 350px), 420px); } .rb-gedanke p { font-size: 14.5px; } .rb-gedanke { padding: 12px 13px; }
+  .stil-rohrbruch .rb-abknoepfe .knopf { font-size: 15px; } }
+/* sanftes Erscheinen: Figur gleitet ein, Wolke ploppt, Rest blendet ein */
+.rb-abschluss .rb-abfigur, .rb-abschluss .rb-gedanke, .rb-abschluss .rb-abkasten, .rb-abschluss .rb-abknoepfe, .rb-abschluss .rb-logoquer { opacity: 0; }
+.rb-abschluss.da .rb-logoquer { animation: rbAbEin .45s ease-out both; }
+.rb-abschluss.da .rb-abfigur { animation: rbAbFigur .7s cubic-bezier(.2,.8,.2,1) .1s both; }
+.rb-abschluss.da .rb-gedanke { animation: rbAbBlase .55s cubic-bezier(.3,1.5,.5,1) .6s both; }
+.rb-abschluss.da .rb-abkasten { animation: rbAbEin .45s .85s ease-out both; }
+.rb-abschluss.da .rb-abknoepfe { animation: rbAbEin .45s 1s ease-out both; }
+@keyframes rbAbEin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes rbAbBlende { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rbAbFigur { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: none; } }
+@keyframes rbAbBlase { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  /* rahmen.css schaltet bei weniger Bewegung alle Animationen ab – hier nur weich einblenden, sonst bliebe alles unsichtbar */
+  .rb-abschluss.da .rb-abfigur, .rb-abschluss.da .rb-gedanke, .rb-abschluss.da .rb-abkasten, .rb-abschluss.da .rb-abknoepfe, .rb-abschluss.da .rb-logoquer { opacity: 1; animation: rbAbBlende .3s ease-out both !important; }
+}
+
+/* Kasten im Abschlussbild: Bild links, Text + „Zur Website“ rechts; „Zur Website“ genau so breit wie „Zum Menü“ und bündig darüber
+   (gleiches 2-Spalten-Raster wie die Knöpfe, MZ 25.10.2026) */
+.rb-abkasten .rb-ausbildung { padding: 0; border: 0; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,.2); }
+.rb-abkasten .rb-ausbildung.mitbild { display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px; align-items: stretch; padding: 0; }
+/* Foto über die ganze Höhe von Text + Knopf (Unterkante Foto = Unterkante Knopf); contain: size – das Foto bestimmt die Höhe nicht mit */
+.rb-abkasten .rb-ausbildungbild { width: 100%; height: auto; min-height: 96px; align-self: stretch; contain: size; aspect-ratio: auto; border-radius: 0; }
+.rb-abkasten .rb-ausbildungtext { gap: 8px; justify-content: space-between; }
+.rb-abkasten .rb-ausbildung p { padding: 10px 12px 0 0; font-size: 14px; line-height: 1.32; }
+.rb-abkasten .rb-ausbildung:not(.mitbild) p { padding: 12px 14px 0; }
+.rb-abkasten .rb-ausbildung:not(.mitbild) .rb-webknopf { width: calc(50% - 5px); align-self: flex-end; }
+.stil-rohrbruch .rb-abkasten .rb-ausbildung .knopf.rb-webknopf { margin: 0; border-radius: 12px 0 14px 12px; padding: 11px 8px; font-size: 16px; white-space: nowrap; }
+@media (max-width: 359px) { .rb-abkasten .rb-ausbildung p { font-size: 13px; } }
+@media (max-height: 520px) { .rb-abschluss.quer .rb-abkasten .rb-ausbildungbild { min-height: 0; } .stil-rohrbruch .rb-abschluss.quer .rb-abkasten .knopf.rb-webknopf { padding: 8px; font-size: 15px; } }
+@media (min-width: 1000px) and (min-height: 700px) { .rb-abschluss.quer .rb-abschlussinhalt { width: min(980px, 100%); } .rb-abschluss.quer .rb-abbuehne { --fh: min(calc(100svh - 110px), 560px); }
+  .rb-gedanke p { font-size: 18px; } .rb-abkasten .rb-ausbildung p { font-size: 16px; } }
+.stil-rohrbruch .rb-abkasten .knopf.rb-webknopf:hover { transform: none; }   /* bleibt bündig mit Foto und „Zum Menü“ */
+
+/* ---------- Verlierer-Logik (Developer B, MZ 25.10.2026): Fehler-Anzeige, Warnung, Ausscheiden ---------- */
+/* Fehler-Punkte in der Kopfzeile neben „Einsatz 1/3“: frei = Ring, verbraucht = gefüllt; beim letzten erlaubten pulsiert der freie */
+#anzeige .links:has(.rb-fehler:not([hidden])) { line-height: 1.15; }
+#anzeige .rb-fehler { display: flex; align-items: center; gap: 4px; margin-top: 3px; height: 10px; }
+#anzeige .rb-fehler[hidden] { display: none; }
+#anzeige .rb-fehler i { width: 9px; height: 9px; border-radius: 50%; border: 2px solid rgba(255,255,255,.85); box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(0,0,0,.35); transition: background-color .3s, border-color .3s; }
+#anzeige .rb-fehler i.weg { background: #ff6a55; border-color: #fff; }
+#anzeige .rb-fehler i.neu { animation: rbFehlerNeu .6s cubic-bezier(.3,1.6,.5,1); }
+#anzeige .rb-fehler.letzter i:not(.weg) { animation: rbFehlerLetzter 1.4s ease-in-out infinite; }
+@keyframes rbFehlerNeu { 0% { transform: scale(.4); } 55% { transform: scale(1.7); } 100% { transform: scale(1); } }
+@keyframes rbFehlerLetzter { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); border-color: #ffd2c9; } }
+@media (max-width: 359px) { #anzeige .rb-fehler { gap: 3px; } #anzeige .rb-fehler i { width: 8px; height: 8px; } }
+/* Warnung beim letzten erlaubten Fehler: als Schild über der Kopfzeile (QA Release 2: nicht über Fenstertiteln wie „Ursache“
+   oder „Werkzeugkoffer“); „Zum Menü“ bleibt frei, Tippen schließt, nach ca. 4s weg */
+.rb-fehlerwarnung { position: fixed; z-index: 45; top: 4px; left: calc(52px + env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right));
+  min-height: 40px; display: flex; align-items: center; padding: 4px 12px; border-radius: 12px; background: #fff; color: #2a2a2a;
+  border-left: 5px solid #e2462f; box-shadow: 0 6px 18px rgba(0,0,0,.3); font-size: 14px; font-weight: 600; line-height: 1.2; text-align: left;
+  animation: rbWarnEin .45s cubic-bezier(.2,.9,.3,1.2) both; cursor: pointer; }
+@media (max-width: 400px) { .rb-fehlerwarnung { font-size: 12.5px; padding: 3px 10px; } }
+.rb-fehlerwarnung.weg { opacity: 0; transform: translateY(-8px); transition: opacity .35s, transform .35s; }
+@keyframes rbWarnEin { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+/* Sperre zwischen dem Fehler und der Einblendung (nichts mehr antippen) */
+.rb-ausdeckel { position: fixed; inset: 0; z-index: 55; }
+/* Einblendung „Feierabend vor der Zeit“ */
+.rb-austitel .rb-wzzusatz { display: block; margin-top: 8px; font-size: clamp(16px, 4.4vw, 20px); font-weight: 600; }
+.rb-szene.ausgeschieden .rb-austitel { animation: rbAusEin .5s cubic-bezier(.2,.9,.3,1.15) both; }
+@keyframes rbAusEin { 0% { opacity: 0; transform: scale(.85) rotate(-2deg); } 100% { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  #anzeige .rb-fehler i.neu, #anzeige .rb-fehler.letzter i:not(.weg), .rb-szene.ausgeschieden .rb-austitel { animation: none; }
+  .rb-fehlerwarnung { animation: none; }
+}
+
+/* ---------- Transporter-Beschriftung, Variante B (Developer B, MZ 25.10.2026): Logo hoch auf der Schiebetür, Kontakt hinten ---------- */
+/* Fahrt 3,2s: hereinfahren – ca. 1s in der Mitte stehen – hinausfahren (fahrt.js DAUER) */
+.rb-transporter { container-type: size; }
+.rb-transporter.faehrt { animation-name: rbFahrenHalt; animation-timing-function: linear; }
+@keyframes rbFahrenHalt {
+  0% { left: 100%; transform: translateX(0); animation-timing-function: cubic-bezier(.2,.6,.35,1); }
+  36% { left: 50%; transform: translateX(-50%); animation-timing-function: linear; }
+  67% { left: 50%; transform: translateX(-50%); animation-timing-function: cubic-bezier(.6,0,.85,.45); }
+  100% { left: 0; transform: translateX(-100%); }
+}
+.rb-transporterlogo { object-fit: contain; object-position: 50% 50%; }
+.rb-transporterlogo.weiss { filter: brightness(0) invert(1); }
+.rb-transporterkontakt { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.06em;
+  color: #fff; font-family: var(--schrift-kopf); font-weight: 600; font-size: 6.8cqh; line-height: 1.1; text-align: center; white-space: nowrap;
+  letter-spacing: .01em; pointer-events: none; text-shadow: 0 0 1px rgba(0,0,0,.18); }
+.rb-transporterkontakt .rb-tel { display: inline-flex; align-items: center; gap: 0.28em; }
+.rb-transporterkontakt .rb-hoerer { width: 0.95em; height: 0.95em; flex: none; }
+/* Quer flach (MZ, 25.10.2026): Funkspruch kompakt als Spalte rechts (Ortszeile darüber), die Straße läuft über die ganze
+   Breite, der Transporter hält mittig in der linken Fläche und wird so deutlich größer (Kontaktschrift ca. 10 px und mehr).
+   Lange Funksprüche scrollen im Kasten, „Weiter“ bleibt sichtbar. Hochformat unverändert (.rb-fahrtspalte = display: contents). */
+.rb-fahrtspalte { display: contents; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .rb-szene.fahrt { --funkb: clamp(222px, 40vw, 380px); padding-bottom: 6px; align-items: stretch; }
+  .rb-szene.fahrt .rb-fahrtbox { width: 100%; height: 100%; display: grid; gap: 0; grid-template-columns: minmax(0, 1fr) var(--funkb); grid-template-rows: 100%; }
+  .rb-szene.fahrt .rb-strasse { grid-column: 1 / -1; grid-row: 1; width: auto; height: 100%; min-height: 0; }
+  .rb-szene.fahrt .rb-strasse::after { bottom: 7%; }
+  .rb-szene.fahrt .rb-transporter { bottom: 9%; height: min(84%, calc((100vw - var(--funkb) - 36px) * 308 / 640));
+    --halt: calc((100vw - var(--funkb) - 24px) / 2); }
+  .rb-szene.fahrt .rb-transporter:not(.faehrt) { left: var(--halt); }
+  .rb-szene.fahrt .rb-transporter.faehrt { animation-name: rbFahrenHaltQuer; }
+  .rb-szene.fahrt .rb-fahrtspalte { grid-column: 2; grid-row: 1; position: relative; z-index: 1; display: flex; flex-direction: column;
+    justify-content: center; gap: 5px; min-height: 0; max-height: 100%; margin-right: max(12px, env(safe-area-inset-right)); }
+  .rb-szene.fahrt .rb-fahrtziel { flex: none; margin: 0; font-size: 15.5px; line-height: 1.2; text-align: left; }
+  .rb-szene.fahrt .rb-fahrtfunk { flex: 0 1 auto; width: auto; min-height: 0; overflow-y: auto; padding: 7px 9px; gap: 5px; border-radius: 12px; }
+  .rb-szene.fahrt .rb-funkkopf { gap: 8px; }
+  .rb-szene.fahrt .rb-funkbild { width: 34px; height: 34px; }
+  .rb-szene.fahrt .rb-funkname { font-size: 14.5px; }
+  .rb-szene.fahrt .rb-funktext { font-size: 13px; line-height: 1.3; padding: 5px 8px; border-radius: 9px; }
+  .rb-szene.fahrt .rb-fahrtfunk .rb-fahrtweiter { position: sticky; bottom: 0; justify-self: end; padding: 5px 12px; min-width: 92px; box-shadow: 0 -4px 10px #fff; }
+}
+@keyframes rbFahrenHaltQuer {
+  0% { left: 100%; transform: translateX(0); animation-timing-function: cubic-bezier(.2,.6,.35,1); }
+  36% { left: var(--halt, 50%); transform: translateX(-50%); animation-timing-function: linear; }
+  67% { left: var(--halt, 50%); transform: translateX(-50%); animation-timing-function: cubic-bezier(.6,0,.85,.45); }
+  100% { left: 0; transform: translateX(-100%); }
+}
+/* Firmenbild weniger abgesoftet (MZ, 25.10.2026): Mittelwert zwischen alt und „deutlich weniger“ – Weichzeichner 6 → 4,5 px,
+   weiße Schicht ca. 52–62 % → ca. 41–49 % (unten etwas mehr) */
+.rb-fahrthg::before { filter: blur(4.5px) saturate(.89) brightness(1.07); inset: -18px; }
+.rb-fahrthg::after { background: linear-gradient(180deg, rgba(241,244,247,.41), rgba(241,244,247,.485) 55%, rgba(227,232,238,.65)); }
+@media (orientation: portrait) {
+  .rb-fahrthg::after { background: linear-gradient(180deg, rgba(241,244,247,.4) 0, rgba(241,244,247,.475) 44%,
+    #eef1f4 56%, #e3e8ee 78%, color-mix(in srgb, var(--haupt) 14%, #d6dce3) 100%); }
+}
+/* Abschlussbild (QA Release 2, S3): Foto im Kasten oben ausrichten (Köpfe bleiben sichtbar), quer zeigen die Kreise der
+   Gedankenwolke waagrecht zur Figur (Kopf links) statt nach unten zum Kasten */
+.rb-abkasten .rb-ausbildungbild { object-position: 50% 22%; }
+.rb-abschluss.quer .rb-gedankenpunkte i:nth-child(1) { width: 14px; height: 14px; left: -14px; top: 30%; bottom: auto; }
+.rb-abschluss.quer .rb-gedankenpunkte i:nth-child(2) { width: 9px; height: 9px; left: -27px; top: 8%; bottom: auto; }
+.rb-abschluss.quer .rb-gedankenpunkte i:nth-child(3) { width: 6px; height: 6px; left: -37px; top: -12%; bottom: auto; }
