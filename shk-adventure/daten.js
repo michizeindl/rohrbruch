@@ -2286,7 +2286,8 @@ window.ROHRBRUCH = {
   }
  },
  "meister": {
-  "name": "Meister Lehner",
+  "name": "Georg Lehner",
+  "rolle": "Chef",
   "tippEinleitung": [
    "{meister} hier. Kleiner Schubs in die richtige Richtung:",
    "Die Lösung sag ich dir nicht. Aber ich sag dir, wo ich hinschauen würde.",
@@ -2404,28 +2405,42 @@ window.ROHRBRUCH = {
   "Lecksuchspray": "neu",
   "Abgasmessgerät": "neu",
   "Leiter": "neu",
+  "Kriechöl": "neu",
+  "Haushaltszange": "neu",
+  "Zollstock": "neu",
+  "Gummihandschuhe": "neu",
+  "Chemischer Abflussreiniger": "neu",
+  "Kabelbinder": "neu",
+  "Hammer": "neu",
   "Kartuschenpresse": "neu",
   "Fugenglätter": "neu",
+  "Silikonkartusche": "neu",
+  "Alte Zahnbürste": "neu",
   "Schüssel": "neu",
   "Dämmklebeband": "neu",
+  "Akkuschrauber": "neu",
   "Gießkanne": "neu",
   "Dichtband": "neu",
   "Hebehilfe": "neu",
+  "Gartenschlauch": "neu",
   "Staubmaske": "neu",
   "Müllsack": "neu",
   "Absturzsicherung": "neu",
   "Leerkanister": "neu",
   "Abdeckplane": "neu",
+  "Panzertape": "neu",
+  "Verlängerungskabel": "neu",
   "Ventiladapter": "neu",
   "Schwamm": "neu",
   "Schutzbrille": "neu",
-  "Auffangsack Klimagerät": "neu"
+  "Auffangsack Klimagerät": "neu",
+  "Heißklebepistole": "neu"
  },
  "rahmen": {
   "frage": "Findest du den Fehler im System?",
   "anleitung": "Drei Einsätze warten auf dich. Tippe im Raum alles an, was verdächtig ist, finde die Ursache und dann das passende Werkzeug. Sauber reparieren zählt mehr als schnell sein.",
   "stufen": {
-   "azubi": "Drei Möglichkeiten zur Wahl und du brauchst nur das wichtigste Werkzeug. Außerdem hilft dir je einmal der Meister. Fünf Fehler sind erlaubt.",
+   "azubi": "Drei Möglichkeiten zur Wahl und du brauchst nur das wichtigste Werkzeug. Außerdem hilft dir je einmal der Chef. Fünf Fehler sind erlaubt.",
    "geselle": "Vier Lösungen zur Wahl und du packst alles, was du brauchst. Wie viele Dinge es sind, verrät dir das Spiel. Drei Fehler sind erlaubt.",
    "meister": "Fünf Optionen, kein Tipp, und manchmal musst du gleich zwei Fehler finden. Was in den Koffer soll, weißt du selbst. Zwei Fehler sind erlaubt."
   },
@@ -2457,7 +2472,7 @@ window.ROHRBRUCH = {
    "Sauber gearbeitet",
    "Läuft wieder",
    "Tropft noch etwas",
-   "Nochmal zum Meister"
+   "Zurück in die Lehre"
   ],
   "abbruch": "Einsatz abbrechen? Dieser Durchgang zählt dann 0 Punkte.",
   "praktikum": "Lust aufs Handwerk? Mach dein Praktikum bei {firma}.",
@@ -2490,7 +2505,7 @@ window.ROHRBRUCH = {
      "Peinlich. Zum Glück gibt es einen zweiten Versuch."
     ],
     "ausgeschieden": [
-     "Da hat der Meister wohl übernommen. Nächstes Mal schaffe ich das.",
+     "Da hat der Chef wohl übernommen. Nächstes Mal schaffe ich das.",
      "Zu viele Fehler. Morgen zeige ich, dass ich es kann.",
      "Das war nichts. Aber jetzt weiß ich, worauf ich achten muss."
     ]
@@ -2561,11 +2576,11 @@ window.ROHRBRUCH = {
    }
   },
   "ausgeschiedenTitel": "Feierabend vor der Zeit",
-  "fehlerWarnung": "Vorsicht – noch ein Fehler, dann übernimmt der Meister.",
+  "fehlerWarnung": "Vorsicht – noch ein Fehler, dann übernimmt der Chef.",
   "fehlerWarnungMeister": "Vorsicht – noch ein Fehler, dann ist für heute Schluss.",
   "fehlerAnzeige": "Fehler {n}/{max}",
   "fehlerAnzeigeLesen": "Fehler {n} von {max} erlaubt",
-  "ausgeschiedenZusatz": "Zu viele Fehler – der Meister übernimmt.",
+  "ausgeschiedenZusatz": "Zu viele Fehler – der Chef übernimmt.",
   "ausgeschiedenZusatzMeister": "Zu viele Fehler – für heute ist Schluss.",
   "rueckmeldungen": {
    "loesung": [
@@ -2727,7 +2742,7 @@ window.ROHRBRUCH = {
    "leisteUntersuchen": "Tippe die markierten Stellen an und schau sie dir mit der Lupe an.",
    "leisteUntersucht": "Untersucht: {n} Stellen – wenn du die Ursache kennst, wähle sie aus.",
    "leisteUntersuchtEins": "Untersucht: 1 Stelle – wenn du die Ursache kennst, wähle sie aus.",
-   "knopfTipp": "Frag den Meister (−{tipp})",
+   "knopfTipp": "Frag den Chef (−{tipp})",
    "reinigen": "Wisch mit dem Finger über den Schmutz, bis alles sauber ist.",
    "reinigenNachVorarbeit": "Jetzt sauber machen – wisch über den Schmutz.",
    "einstellenUhr": "Drehe das Stellrad mit dem Finger im Kreis.",
@@ -2753,7 +2768,7 @@ window.ROHRBRUCH = {
     "B"
    ],
    "figur": "",
-   "ausloeser": "Telefon (Büro über den Meister)",
+   "ausloeser": "Telefon (Büro über den Chef)",
    "sprecher": "Meister",
    "text": [
     "{meister} hier, kurz fürs Büro. Kannst du morgen früh eine Wartung übernehmen?",
@@ -2853,14 +2868,14 @@ window.ROHRBRUCH = {
   },
   {
    "id": "ZF-06",
-   "titel": "Der Meister in der Warteschleife",
+   "titel": "Der Chef in der Warteschleife",
    "orte": [],
    "varianten": [
     "A",
     "B"
    ],
    "figur": "",
-   "ausloeser": "Telefon (Meister)",
+   "ausloeser": "Telefon (Chef)",
    "sprecher": "Meister",
    "text": [
     "{meister} hier. Moment, der Großhandel ist auf der anderen Leitung.",
@@ -2868,10 +2883,10 @@ window.ROHRBRUCH = {
    ],
    "aktion": "warten",
    "gegenstand": "",
-   "aktionText": "Warte, bis der Meister zurück ist, und tippe dann.",
+   "aktionText": "Warte, bis der Chef zurück ist, und tippe dann.",
    "ja": "",
    "nein": "",
-   "abschluss": "Der Meister ist zurück: Die Teile für morgen sind bestellt."
+   "abschluss": "Der Chef ist zurück: Die Teile für morgen sind bestellt."
   },
   {
    "id": "ZF-07",
@@ -3441,7 +3456,6 @@ window.ROHRBRUCH = {
   "Fernsehzeitschrift": "Fernseh­zeitschrift",
   "Handdesinfektionsmittel": "Hand­desinfektions­mittel",
   "Orchideendünger": "Orchideen­dünger",
-  "Paketklebeband": "Paket­klebeband",
   "Shampooflaschen": "Shampoo­flaschen",
   "Spezialwerkzeug": "Spezial­werkzeug",
   "Tischventilator": "Tisch­ventilator",
@@ -3558,6 +3572,12 @@ window.ROHRBRUCH = {
   "Wäscheständer": "Wäsche­ständer",
   "Zündelektrode": "Zünd­elektrode",
   "Rohrdämmung": "Rohr­dämmung",
-  "Wasserhärte": "Wasser­härte"
+  "Wasserhärte": "Wasser­härte",
+  "Haushaltszange": "Haushalts­zange",
+  "Silikonkartusche": "Silikon­kartusche",
+  "Gummihandschuhe": "Gummi­handschuhe",
+  "Akkuschrauber": "Akku­schrauber",
+  "Verlängerungskabel": "Verlängerungs­kabel",
+  "Heißklebepistole": "Heiß­klebe­pistole"
  }
 };

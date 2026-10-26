@@ -14,11 +14,26 @@
   //    rohrbruch-regional-entwurf.md); 2. danach Platzhalter {firma} (Firmenname) und {meister} (Nachname des Meisters).
   // Läuft einmal für daten.js und für jede nachgeladene Ort-Datei; nur Werte, nie Schlüssel.
   const MEISTER_NACHNAME = (K.meister && (K.meister.nachname || String(K.meister.name || '').trim().split(/\s+/).pop())) || 'Lehner';
+  // Chef statt Meister (MZ, 26.10.2026): Rollenwort der Helfer-Figur aus kunde.js (meister.rolle, Standard „Chef“). Bei „Chefin“
+  // werden die festen Wendungen angepasst; andere Rollenwörter ersetzen nur das Wort „Chef“. Gilt für alle Spieltexte und die
+  // Ersatztexte im Code (chef()). Der Stufenname „Meister“, „Meisterleistung“ und die Meister-Stufenfigur bleiben.
+  const ROLLE = String((K.meister && K.meister.rolle) || (D.meister && D.meister.rolle) || 'Chef').trim() || 'Chef';
+  const CHEFIN = [[/\b([Dd])er Chef\b/g, '$1ie Chefin'], [/\b([Dd])en Chef\b/g, '$1ie Chefin'], [/\b([Dd])em Chef\b/g, '$1er Chefin'],
+    [/\b([Vv])om Chef\b/g, '$1on der Chefin'], [/\b([Dd])es Chefs\b/g, '$1er Chefin'], [/\bChefs\b/g, 'Chefin'], [/\bChef\b/g, 'Chefin']];
+  function chef(t) {
+    if (ROLLE === 'Chef' || typeof t !== 'string' || t.indexOf('Chef') < 0) return t;
+    if (ROLLE === 'Chefin') return CHEFIN.reduce((x, [re, neu]) => x.replace(re, neu), t);
+    return t.replace(/\bChef\b/g, ROLLE);
+  }
+  // Anzeige-Name der Helfer-Figur: „Georg Lehner – Chef“ (Funk, Gespräch), kurz „Chef Lehner“ (Telefon, Lob, wenig Platz)
+  const chefName = () => (K.meister && K.meister.name) || (D.meister && D.meister.name) || 'Georg Lehner';
+  const chefVoll = () => chefName() + NBSP + '– ' + ROLLE;
+  const chefKurz = () => ROLLE + ' ' + MEISTER_NACHNAME;
   function texteAnpassen(o) {
     const reg = K.regional && D.regional ? D.regional : null;
     const text = t => {
       if (reg && Object.prototype.hasOwnProperty.call(reg, t)) t = reg[t];
-      return t.indexOf('{') < 0 ? t : t.split('{firma}').join(K.firma || '').split('{meister}').join(MEISTER_NACHNAME);
+      return chef(t.indexOf('{') < 0 ? t : t.split('{firma}').join(K.firma || '').split('{meister}').join(MEISTER_NACHNAME));
     };
     const gehen = x => {
       if (Array.isArray(x)) { for (let i = 0; i < x.length; i++) { if (typeof x[i] === 'string') x[i] = text(x[i]); else if (x[i] && typeof x[i] === 'object') gehen(x[i]); } }
@@ -39,6 +54,7 @@
   // Phase 3: #orte=HK,BA (nur diese Orte ziehen) bzw. #orte=fertig (nur Orte mit eingemessenen Raumbildern)
   // #zwischenfall (sicher einer, nach 3s Uhr) bzw. #zwischenfall=Z-02 (genau dieser) – #keinzwischenfall
   // #buch (Einsatzbuch-Ansicht, Zurück zum Menü)  #tier (Katze/Hund kommt nach 1s)
+  // #freunde=0|1|2 (falsche Freunde je Einsatz erzwingen, MZ 26.10.2026; #freunde = 2) – RB.verteilung(n) würfelt n Einsätze
   const HASH = {};
   const hashLesen = (ziel) => { decodeURIComponent(location.hash.slice(1)).split(/[&#]/).forEach(t => { if (!t) return; const [k, v] = t.split('='); ziel[k.trim()] = v == null ? true : v.trim(); }); return ziel; };
   hashLesen(HASH);
@@ -65,6 +81,16 @@
   const P = { ursache: [150, 75, 25, 0], werkzeug: 60, fehlgriff: 20, reparieren: { genau: 60, ungenau: 30, anlauf2: 10 },
     tempo: 63, tempoVoll: 60, tempoNull: 180, tipp: 30, einsatz: 333 };
   const EINSAETZE = 3, STELLEN = [7, 9];   // antippbare Stellen je Einsatz (feste + aufgefüllt), höchstens 10
+  // Raumsuche (MZ, 26.10.2026): höchstens 5 Dinge je Raum, mindestens 2 leere Verstecke. Falsche Freunde je Einsatz:
+  // Wahrscheinlichkeit für 0 / 1 / 2 (Azubi selten, Geselle häufig, Meister häufig und gern zwei). Test: #freunde=0|1|2
+  const VERSTECK_MAX = 5, VERSTECK_LEER = 2;
+  const FREUNDE = { azubi: [0.75, 0.25, 0], geselle: [0.25, 0.60, 0.15], meister: [0.10, 0.35, 0.55] };
+  function freundeZahl() {
+    if (HASH.freunde === true) return 2;   // #freunde ohne Zahl = zwei
+    if (HASH.freunde != null && !isNaN(+HASH.freunde)) return Math.max(0, Math.min(2, +HASH.freunde));
+    const w = FREUNDE[stufe] || FREUNDE.geselle, r = Math.random();
+    return r < w[0] ? 0 : r < w[0] + w[1] ? 1 : 2;
+  }
   const REST = 1000 - P.einsatz * EINSAETZE;   // 1 Punkt, den der letzte Einsatz mehr hat
   const einsatzMax = nr => P.einsatz + (nr === EINSAETZE ? REST : 0);
   const tempoMax = nr => P.tempo + (nr === EINSAETZE ? REST : 0);
@@ -451,6 +477,8 @@
       return { einsaetze, nr: -1, ergebnisse: [], start: performance.now(), fehler: 0, aus: false };
     });
   }
+  // alle Gegenstände der Packliste einer Störung – Hauptwerkzeug, „Dazu packen“, auch M2 (unabhängig von der Stufe)
+  const stoerungsTeile = st => [st.werkzeug].concat(st.dazu || [], st.m2 ? [st.m2.werkzeug].concat(st.m2.dazu || []) : []).filter(w => w && w.name).map(w => w.name);
   function einsatzAnlegen(st, i, benutzt) {
     const ort = O[st.ort], oT = D.orte[st.ort];
     const varianten = st.varianten.filter(v => ort.varianten[v]);
@@ -489,7 +517,7 @@
     // Verstecke im Raum, je Einsatz neu gewürfelt: Dinge der Packliste mit Herkunft „Raum“ + 1–2 Ablenker des Orts (passend
     // zur Variante), Rest leer. Mindestens ein Versteck bleibt leer, mindestens eins enthält etwas (MZ, 24.10.2026).
     const versteckNamen = oT.verstecke.filter(v => v.varianten.includes(variante) && V.verstecke[v.name]).map(v => v.name);
-    const verstecke = {};   // Versteck → null | { name, art: 'pack' | 'ablenker', witzig, genommen }
+    const verstecke = {};   // Versteck → null | { name, art: 'pack' | 'freund' | 'ablenker', witzig, warum, genommen }
     versteckNamen.forEach(n => { verstecke[n] = null; });
     const frei = mischen(versteckNamen);
     // Heißt ein Versteck nach einem Gegenstand der Packliste („Eimer in der Ecke“ + Eimer), liegt genau dieser dort (QA 24.10.2026)
@@ -498,17 +526,37 @@
       const v = frei.find(n => woerter(n).includes(p.name.toLowerCase()));
       if (v && frei.length > 1) { verstecke[v] = { name: p.name, art: 'pack' }; frei.splice(frei.indexOf(v), 1); p.platziert = true; }
     });
+    // Obergrenze (MZ, 26.10.2026): höchstens 5 Dinge im Raum und mindestens 2 leere Verstecke. Packlisten-Teile haben Vorrang.
+    const grenze = Math.max(1, Math.min(VERSTECK_MAX, versteckNamen.length - VERSTECK_LEER));
     packliste.filter(p => p.herkunft === 'raum' && !p.platziert).forEach(p => {
-      if (frei.length > 1) verstecke[frei.shift()] = { name: p.name, art: 'pack' };
+      if (frei.length > VERSTECK_LEER) verstecke[frei.shift()] = { name: p.name, art: 'pack' };
       else p.herkunft = 'koffer';   // zu wenig Verstecke: liegt dann im Koffer
     });
     const belegt = Object.values(verstecke).filter(Boolean).length;
-    // Ablenker; die übrigen bleiben als Ersatz, falls der Zwischenfall des Durchgangs denselben Gegenstand braucht (zwAblenkerWeg)
-    const ablenker = mischen((oT.ablenker || []).filter(a => (a.varianten || ['A', 'B']).includes(variante) && !packliste.some(p => p.name === a.name)));
-    const nAbl = Math.min(Math.random() < 0.5 ? 1 : 2, Math.max(belegt ? 0 : 1, frei.length - 1));
+    // Falsche Freunde (MZ, 26.10.2026): Dinge des Kunden, die nützlich wirken, hier aber nicht gebraucht werden. Nie aus der
+    // Packliste der Störung (auch M2, unabhängig von der Stufe), nie bei „nicht bei“. Anzahl je Stufe gewürfelt (FREUNDE).
+    // Wird es eng, fallen zuerst Ablenker weg, dann der zweite falsche Freund.
+    const ausStoerung = stoerungsTeile(st);
+    const freunde = mischen((oT.falscheFreunde || []).filter(f => (f.varianten || ['A', 'B']).includes(variante)
+      && !ausStoerung.includes(f.name) && !(f.nichtBei || []).includes(st.id)));
+    const nFr = Math.min(freundeZahl(), freunde.length, Math.max(0, grenze - belegt));
+    const gelegt = [];
+    freunde.slice(0, nFr).forEach(f => {
+      // heißt ein freies Versteck nach dem Gegenstand („Eimer in der Ecke“), liegt er dort
+      const v = frei.find(n => woerter(n).includes(f.name.toLowerCase())) || frei[0];
+      if (!v) return;
+      frei.splice(frei.indexOf(v), 1);
+      verstecke[v] = { name: f.name, art: 'freund', warum: f.warum || '' };
+      gelegt.push(f.name);
+    });
+    // Ablenker; die übrigen bleiben als Ersatz, falls der Zwischenfall des Durchgangs denselben Gegenstand braucht (zwAblenkerWeg).
+    // Mit falschem Freund nur 1 Ablenker, sonst 1–2 wie bisher; immer mindestens ein Ding im Raum.
+    const ablenker = mischen((oT.ablenker || []).filter(a => (a.varianten || ['A', 'B']).includes(variante) && !packliste.some(p => p.name === a.name) && !gelegt.includes(a.name)));
+    const platz = grenze - belegt - gelegt.length;
+    const nAbl = Math.max(0, Math.min(gelegt.length ? 1 : Math.random() < 0.5 ? 1 : 2, platz, frei.length - VERSTECK_LEER));
     ablenker.slice(0, nAbl).forEach(a => { const v = frei.shift(); if (v) verstecke[v] = { name: a.name, art: 'ablenker', witzig: a.witzig || '' }; });
     return { nr: i + 1, st, ort: st.ort, variante, V, figur, m2, stellen, packliste, brauche, verstecke, eingepackt: [], falschGenommen: [],
-      ablenkerRest: ablenker.slice(nAbl),
+      ablenkerRest: ablenker.slice(nAbl), freundeRest: freunde.slice(nFr),
       zwischenfall: null, zwAb: HASH.zwischenfall ? 3 : 10 + Math.random() * 30, ortName: ortName(st.ort, variante),
       nebenbei: [], besucht: [], raumSuche: false, phase: 'titel',
       zeit: 0, fehlDiag: 0, loesungGezeigt: false, fehlWerk: 0, tipp: false, rep: {}, leereVerstecke: 0, fehlgriffGesagt: false, richtigGefunden: [] };
@@ -583,7 +631,7 @@
   function fehlerWarnung() {
     if (warnEl) warnEl.remove();
     const w = warnEl = el('div', 'rb-fehlerwarnung', stufe === 'meister' ? rt('fehlerWarnungMeister', 'Vorsicht – noch ein Fehler, dann ist für heute Schluss.')
-      : rt('fehlerWarnung', 'Vorsicht – noch ein Fehler, dann übernimmt der Meister.'));
+      : rt('fehlerWarnung', chef('Vorsicht – noch ein Fehler, dann übernimmt der Chef.')));
     w.setAttribute('role', 'status');
     w.addEventListener('click', () => w.remove());
     document.body.append(w);
@@ -608,7 +656,7 @@
       t.append(el('small', '', ST().name), el('strong', '', rt('ausgeschiedenTitel', 'Feierabend vor der Zeit')),
         // Ersatztext (Schlüssel-Vorschlag ausgeschiedenZusatz / ausgeschiedenZusatzMeister für den Text Writer)
         el('span', 'rb-wzzusatz', stufe === 'meister' ? rt('ausgeschiedenZusatzMeister', 'Zu viele Fehler – für heute ist Schluss.')
-          : rt('ausgeschiedenZusatz', 'Zu viele Fehler – der Meister übernimmt.')));
+          : rt('ausgeschiedenZusatz', chef('Zu viele Fehler – der Chef übernimmt.'))));
       let fertig = false;
       const los = () => { if (fertig) return; fertig = true; clearTimeout(uhr); if (lauf === l) ausgeschiedenEnde(); };
       const uhr = setTimeout(los, RB.ruhig ? 1800 : 2800);
@@ -719,7 +767,7 @@
     if (E.nr > 1 && D.meister.fahrt.length) saetze.push(zufall(D.meister.fahrt));
     saetze.push(zufall(D.orte[E.ort].funk).replace('{figur}', f.name));
     const fahrt = RB.fahrtBauen({ saetze, ziel: f.name + ' – ' + E.ortName,
-      meister: { name: (K.meister && K.meister.name) || D.meister.name, bild: meisterBild(2) } });
+      meister: { name: chefVoll(), bild: meisterBild(2) } });
     let fertig = false;
     const e = E;
     const los = () => { if (fertig) return; fertig = true; if (E !== e) return; szeneWeg(); weiter(); };
@@ -734,7 +782,7 @@
   // Kundin/Kunde oder Meister mit Sprechblasen. saetze = [{ text, stimmung (1–3) }]; fertigText = Knopf am Ende
   function gespraech(wer, saetze, fertigText, weiter) {
     const meister = wer === 'meister';
-    const name = meister ? ((K.meister && K.meister.name) || D.meister.name) : D.figuren[wer].name;
+    const name = meister ? chefVoll() : D.figuren[wer].name;
     const hg = el('div', 'rb-hg'); hg.style.backgroundImage = `url("${E.V.bild}")`;
     const platz = el('div', 'rb-figurplatz' + (meister ? ' meister' : ''));
     const fig = el('img', 'rb-figur'); fig.alt = name;
@@ -1098,7 +1146,7 @@
       d.disabled = n === 0;
       aktionen.append(d);
       if (ST().tipp) {
-        const t = knopf(E.tipp ? 'Tipp vom Meister' : RB.anw('knopfTipp', 'Frag den Meister (−{tipp})').replace('{tipp}', P.tipp), 'zweit', meisterTipp);
+        const t = knopf(E.tipp ? chef('Tipp vom Chef') : RB.anw('knopfTipp', chef('Frag den Chef (−{tipp})')).replace('{tipp}', P.tipp), 'zweit', meisterTipp);
         aktionen.append(t);
       }
     } else if (ph === 'werkzeug') {
@@ -1797,7 +1845,15 @@
     if (raus) ausscheiden();
     return 'falsch';
   }
-  function unnoetigText(name) {
+  // Falscher Freund dieses Einsatzes (MZ, 26.10.2026): sein „warum“-Satz statt des allgemeinen „brauchst du hier nicht“
+  function freundWarum(name) {
+    const f = E && Object.values(E.verstecke).find(x => x && x.art === 'freund' && x.name === name);
+    return f && f.warum ? f.warum : '';
+  }
+  // imFund: im Fund-Fenster steht der Name schon darüber – in der Leiste kommt er davor, wenn der Satz ihn nicht nennt
+  function unnoetigText(name, imFund) {
+    const w = freundWarum(name);
+    if (w) return imFund || w.toLowerCase().includes(name.toLowerCase()) ? w : name + ': ' + w;
     const t = T('unnoetig', '{werkzeug} brauchst du hier nicht.', { werkzeug: name });
     return t.includes(name) ? t : name + ': ' + t;
   }
@@ -1846,10 +1902,15 @@
     const box = el('div', 'rb-packpruefung'), ul = el('ul');
     const packBenutzt = new Set();
     E.brauche.filter(b => E.eingepackt.includes(b.name)).forEach(b => ul.append(fachEl('li', 'gut', '✓ ' + b.name, packBenutzt)));
-    const zeile = (klasse, vorne, n) => { const li = el('li', klasse); li.append(fachEl('span', '', vorne + ' ' + n, packBenutzt), el('b', '', '−' + P.fehlgriff)); ul.append(li); };
+    // warum: Satz des falschen Freunds (MZ, 26.10.2026) klein unter „Unnötig: …“
+    const zeile = (klasse, vorne, n, warum) => {
+      const li = el('li', klasse), sp = fachEl('span', '', vorne + ' ' + n, packBenutzt);
+      if (warum) { li.classList.add('mitwarum'); sp.append(el('small', 'rb-warum', warum)); }
+      li.append(sp, el('b', '', '−' + P.fehlgriff)); ul.append(li);
+    };
     // Spielertest 25.10.2026: „Fehlt: Schüssel“ nennt den Fundort (Werkzeugkoffer, Transporter, Raum mit Versteck)
     fehlt.forEach(n => zeile('fehlt', 'Fehlt:', n + NBSP + '– ' + fundort(n)));
-    unnoetig.concat(schonAbgezogen).forEach(n => zeile('unnoetig', 'Unnötig:', n));
+    unnoetig.concat(schonAbgezogen).forEach(n => zeile('unnoetig', 'Unnötig:', n, freundWarum(n)));
     // Summe = Werkzeug-Punkte dieses Einsatzes (wie auf der Einsatzbuch-Karte, nie unter 0)
     const summe = el('li', 'summe');
     summe.append(el('span', '', 'Werkzeug'), el('b', '', Math.max(0, P.werkzeug - P.fehlgriff * E.fehlWerk) + '/' + P.werkzeug));
@@ -1895,7 +1956,7 @@
       }
       const r = packen(fund.name);
       if (r === 'gepackt') { fund.genommen = true; markenSetzen(); zu(); return; }
-      antwort.textContent = nb(r === 'nebenbei' ? NICHT_WICHTIGSTE : unnoetigText(fund.name));
+      antwort.textContent = nb(r === 'nebenbei' ? NICHT_WICHTIGSTE : unnoetigText(fund.name, true));
       antwort.className = 'rb-fundantwort ' + (r === 'nebenbei' ? 'info' : 'falsch');
       weiter();
     }), knopf('Nein', 'zweit', () => {
@@ -1933,12 +1994,15 @@
   // (Ort, Variante, Figur), weicht er auf einen anderen Einsatz aus. Test: #zwischenfall = sicher einer (im ersten passenden
   // Einsatz, nach 3s Uhr), #zwischenfall=ZF-08 = genau dieser (erster Einsatz, in dem er passt), #keinzwischenfall = keiner.
   const ZW_CHANCE = 0.5;
-  function zwischenfallPassend(e) {
+  function zwischenfallPassend(e, auswahl) {   // auswahl: nur für die Testhilfe RB.verteilung
     const alle = D.zwischenfaelle || [];
     const fest = typeof HASH.zwischenfall === 'string' && alle.find(z => z.id === HASH.zwischenfall.toUpperCase());
     // ZF-26 (Eleonore) nur, wo sie lebt: Raumbild mit Gehege (MZ 25.10.2026: nur WP-A)
     const tierOk = z => zwTier(z.gegenstand) !== 'eleonore' || !!(RB.tierFuer && RB.tierFuer(e.figur, e.V) === 'eleonore');
-    const pool = (fest ? [fest] : alle).filter(z => (!z.orte.length || z.orte.includes(e.ort)) && z.varianten.includes(e.variante) && (!z.figur || z.figur === e.figur) && tierOk(z));
+    // Supervisor (26.10.2026): ein Zwischenfall-Gegenstand, der auch auf der Packliste der Störung steht (inkl. M2), kommt nicht
+    // (z. B. ZF-17 Taschenlampe bei DB-03, ZF-20 Lappen bei WZ-02) – dann ein anderer Zwischenfall bzw. ein anderer Einsatz
+    const packOk = z => !z.gegenstand || !stoerungsTeile(e.st).includes(zwName(z.gegenstand));
+    const pool = (fest ? [fest] : alle).filter(z => (!z.orte.length || z.orte.includes(e.ort)) && z.varianten.includes(e.variante) && (!z.figur || z.figur === e.figur) && tierOk(z) && packOk(z) && (!auswahl || auswahl(z)));
     if (!pool.length) return null;
     // an eine Figur gebundene Szenen (Mimi, Gustl, Kind) bevorzugt, wenn die Figur den Einsatz hat
     const eigen = pool.filter(z => z.figur);
@@ -1954,17 +2018,35 @@
       if (z) { einsaetze[i].zwischenfall = z; zwAblenkerWeg(einsaetze[i], z); return; }
     }
   }
-  // Ist der Gegenstand des Zwischenfalls zugleich Ablenker in einem Versteck (z. B. Stressball), liegt dort ein anderer Ablenker
-  // des Orts – sonst bleibt das Versteck leer, solange noch etwas anderes im Raum liegt (Text Writer, 25.10.2026)
+  // Zwischenfall und Raumsuche (Text Writer 25.10.2026, QA/Supervisor 26.10.2026):
+  // 1. Kein Ablenker und kein falscher Freund hat denselben Namen wie der Zwischenfall-Gegenstand; dazu gesperrte falsche Freunde
+  //    je Zwischenfall (ZW_FREUND_SPERRE: Licht/Sicherung → keine Taschenlampe, Schraubendreher weggerollt → kein Akkuschrauber).
+  //    Getauscht wird gegen einen anderen falschen Freund bzw. Ablenker des Einsatzes, sonst bleibt das Versteck leer (solange noch
+  //    etwas anderes im Raum liegt).
+  // 2. Zwischenfälle „suchen“ legen ihren Gegenstand in den Raum – er zählt zur Obergrenze (höchstens 5 belegt, mindestens 2 leer).
+  //    Er liegt an einem eigenen, sonst leeren Versteck (e.zwVersteck; Eleonore an ihren Plätzen im Garten, zählt trotzdem mit).
+  //    Wird es zu voll, fällt zuerst ein Ablenker weg, dann ein falscher Freund; Packliste und Zwischenfall-Gegenstand bleiben.
+  const ZW_FREUND_SPERRE = { 'ZF-07': ['Taschenlampe'], 'ZF-12': ['Taschenlampe'], 'ZF-03': ['Akkuschrauber'] };
   function zwAblenkerWeg(e, z) {
     const ding = zwName(z.gegenstand);
+    const gesperrt = [ding].concat(ZW_FREUND_SPERRE[z.id] || []).filter(Boolean);
+    const belegtZahl = () => Object.values(e.verstecke).filter(Boolean).length;
     Object.keys(e.verstecke).forEach(v => {
       const f = e.verstecke[v];
-      if (!f || f.art !== 'ablenker' || f.name !== ding) return;
-      const ersatz = (e.ablenkerRest || []).find(a => a.name !== ding && !Object.values(e.verstecke).some(x => x && x.name === a.name));
-      if (ersatz) e.verstecke[v] = { name: ersatz.name, art: 'ablenker', witzig: ersatz.witzig || '' };
-      else if (Object.values(e.verstecke).filter(Boolean).length > 1) e.verstecke[v] = null;
+      if (!f || (f.art !== 'ablenker' && f.art !== 'freund') || !gesperrt.includes(f.name)) return;
+      const da = a => !gesperrt.includes(a.name) && !Object.values(e.verstecke).some(x => x && x.name === a.name);
+      const fr = f.art === 'freund' && (e.freundeRest || []).find(da);
+      const ersatz = !fr && (e.ablenkerRest || []).find(da);
+      if (fr) e.verstecke[v] = { name: fr.name, art: 'freund', warum: fr.warum || '' };
+      else if (ersatz) e.verstecke[v] = { name: ersatz.name, art: 'ablenker', witzig: ersatz.witzig || '' };
+      else if (belegtZahl() > 1) e.verstecke[v] = null;
     });
+    if (z.aktion !== 'suchen') return;
+    const namen = Object.keys(e.verstecke), grenze = Math.max(1, Math.min(VERSTECK_MAX, namen.length - VERSTECK_LEER));
+    // Platz schaffen: Zwischenfall-Gegenstand + belegte Verstecke ≤ Grenze (damit auch mindestens 2 leer bleiben)
+    const weg = art => { const v = mischen(namen.filter(n => e.verstecke[n] && e.verstecke[n].art === art))[0]; if (v) e.verstecke[v] = null; return !!v; };
+    while (belegtZahl() + 1 > grenze && (weg('ablenker') || weg('freund'))) { /* weiter */ }
+    if (zwTier(z.gegenstand) !== 'eleonore') e.zwVersteck = zufall(namen.filter(n => !e.verstecke[n])) || null;
   }
   const zwName = g => String(g || '').replace(/\s*\(.*\)\s*$/, '').trim();   // „Werkzeugkoffer (Visitenkarten im Deckel)“ → „Werkzeugkoffer“
   const zwTier = g => /Mimi/.test(g) ? 'mimi' : /Gustl/.test(g) ? 'gustl' : /Eleonore/.test(g) ? 'eleonore' : null;
@@ -2029,7 +2111,7 @@
       const m = FIG[wer]; if (m && m[nr - 1]) platz.style.setProperty('--seite', m[nr - 1].w / m[nr - 1].h);
       platz.append(fig); teile.push(platz);
       if (kunde) name = D.figuren[E.figur].name;
-      if (meister) name = ((K.meister && K.meister.name) || D.meister.name) + NBSP + '– Telefon';
+      if (meister) name = chefKurz() + NBSP + '– Telefon';
     }
     const spalte = el('div', 'rb-blasen' + (kunde || meister ? '' : ' rand')), liste = el('div', 'rb-blasenliste');
     spalte.append(el('div', 'rb-name', name), liste);
@@ -2089,7 +2171,8 @@
     aufgabe.textContent = nb(z.aktionText || ''); aktionen.textContent = ''; meldung('');
     const plaetze = Object.values(E.V.verstecke).concat(Object.values(E.V.stellen));
     const tier = zwTier(z.gegenstand), schalter = z.aktion === 'tippen';
-    let p = zufall(plaetze);
+    // Zwischenfall „suchen“: am eigens frei gehaltenen Versteck (zwAblenkerWeg), sonst irgendwo an einem Versteck/einer Stelle
+    let p = z.aktion === 'suchen' && E.zwVersteck && E.V.verstecke[E.zwVersteck] ? E.V.verstecke[E.zwVersteck] : zufall(plaetze);
     // Schalter/Sicherung an der Wand: Platz in Wandhöhe, bevorzugt nahe am Bildrand (wie neben einer Tür)
     if (schalter) p = E.V.schalter;   // eingemessen (orte.js, HK/HA: neben der Tür bzw. an der Wand)
     if (tier && /Kessel/.test(z.text.join(' ') + z.aktionText) && E.V.stellen['Kessel-Display']) { const k = E.V.stellen['Kessel-Display']; p = [k[0], Math.max(120, k[1] - 220)]; }
@@ -2406,11 +2489,11 @@
     if (E.m2 && E.st.m2.erklaer) karte.append(el('p', 'rb-erklaer', E.st.m2.erklaer));
     const tab = el('div', 'rb-einsatzpunkte');
     [['Ursache', erg.ursache, 150], ['Werkzeug', erg.werkzeug, 60], ['Reparieren', erg.reparieren, 60], ['Tempo (' + minuten(erg.zeit) + ')', erg.tempo, erg.tempoMax]]
-      .concat(erg.tipp ? [['Tipp vom Meister', erg.tipp, null]] : [])
+      .concat(erg.tipp ? [[chef('Tipp vom Chef'), erg.tipp, null]] : [])
       .forEach(([n, w, m]) => { const z = el('div', 'zeile'); z.append(el('span', '', n), el('b', '', (w < 0 ? '−' + Math.abs(w) : String(w)) + (m ? '/' + m : ''))); tab.append(z); });
     const sum = el('div', 'zeile summe'); sum.append(el('span', '', 'Einsatz ' + E.nr), el('b', '', erg.summe + '/' + erg.max)); tab.append(sum);
     karte.append(tab);
-    if (erg.sofort && E.rep.haupt === 'genau' && D.meister.lob.length) karte.append(el('p', 'rb-lob', (K.meister && K.meister.name || D.meister.name) + ': „' + zufall(D.meister.lob) + '“'));
+    if (erg.sofort && E.rep.haupt === 'genau' && D.meister.lob.length) karte.append(el('p', 'rb-lob', chefKurz() + ': „' + zufall(D.meister.lob) + '“'));
     const letzter = E.nr >= EINSAETZE;
     karte.append(knopf(letzter ? 'Zum Ergebnis' : 'Nächster Einsatz', 'haupt', () => { szeneWeg(); naechsterEinsatz(); }));
     szeneZeigen('buch', [karte]);
@@ -2540,6 +2623,45 @@
   RB.spiel = { def, STUFEN, get stufe() { return stufe; }, bewertung, BUCH_GESAMT, buch, endeMelden, HASH, get einsatz() { return E; },
     get fehler() { return lauf ? lauf.fehler : null; },   // Testhilfe Verlierer-Logik
     lupe: s => lupe(s), zwischenfall: z => { if (E) { E.zwischenfall = z; E.zwFertig = false; E.zwAb = 0; } } };
+  // Testhilfe Raumsuche (falsche Freunde, MZ 26.10.2026): würfelt n Einsätze je Stufe (Störung zufällig aus dem Katalog der
+  // Stufe, alle Orte) und zählt: Anteil 0/1/2 falsche Freunde und 0/1/2 Ablenker, höchste Zahl belegter, kleinste Zahl leerer
+  // Verstecke, Verstöße gegen die Obergrenze. Ändert nichts am laufenden Spiel. Aufruf: await RB.verteilung(200)
+  // mitZw: jeder Einsatz bekommt einen passenden Zwischenfall ('suchen' = nur solche, die etwas in den Raum legen) – gezählt
+  // werden dann auch der Zwischenfall-Gegenstand im Raum und Verstöße gegen die Zwischenfall-Regeln (zwFehler)
+  RB.verteilung = async (n = 200, nur, mitZw) => {
+    await Promise.all(Object.keys(D.orte).map(ortHolen));
+    const alt = stufe, out = {};
+    try {
+      for (const s of nur ? [nur] : Object.keys(STUFEN)) {
+        stufe = s;
+        const kat = D.katalog.filter(k => k.stufen.includes(s) && O[k.ort] && D.stoerungen.some(x => x.id === k.id));
+        const z = { n, freunde: [0, 0, 0], ablenker: [0, 0, 0], belegtMax: 0, leerMin: 99, ueber5: 0, unter2leer: 0, leerAlle: 0, mitZw: 0, zwFehler: [] };
+        for (let i = 0; i < n; i++) {
+          const k = kat[Math.floor(Math.random() * kat.length)];
+          const e = einsatzAnlegen(D.stoerungen.find(x => x.id === k.id), 0, []);
+          const zw = mitZw ? zwischenfallPassend(e, mitZw === 'suchen' ? x => x.aktion === 'suchen' : null) : null;
+          if (zw) { e.zwischenfall = zw; zwAblenkerWeg(e, zw); z.mitZw++; }
+          const imRaum = zw && zw.aktion === 'suchen' ? 1 : 0;
+          const w = Object.values(e.verstecke), b = w.filter(Boolean).length + imRaum, l = w.length - b + (imRaum && zwTier(zw.gegenstand) === 'eleonore' ? 1 : 0);
+          if (zw) {
+            const gesperrt = [zwName(zw.gegenstand)].concat(ZW_FREUND_SPERRE[zw.id] || []);
+            w.forEach(f => { if (f && f.art !== 'pack' && gesperrt.includes(f.name)) z.zwFehler.push(e.st.id + ' ' + zw.id + ' ' + f.name); });
+            if (stoerungsTeile(e.st).includes(zwName(zw.gegenstand))) z.zwFehler.push(e.st.id + ' ' + zw.id + ' Packliste');
+            if (imRaum && zwTier(zw.gegenstand) !== 'eleonore' && (!e.zwVersteck || e.verstecke[e.zwVersteck])) z.zwFehler.push(e.st.id + ' ' + zw.id + ' kein freies Versteck');
+          }
+          z.freunde[w.filter(x => x && x.art === 'freund').length]++;
+          z.ablenker[Math.min(2, w.filter(x => x && x.art === 'ablenker').length)]++;
+          z.belegtMax = Math.max(z.belegtMax, b); z.leerMin = Math.min(z.leerMin, l);
+          if (b > VERSTECK_MAX) z.ueber5++;
+          if (l < VERSTECK_LEER) z.unter2leer++;
+          if (!b) z.leerAlle++;
+        }
+        z.anteilFreunde = z.freunde.map(x => Math.round(100 * x / n) + ' %');
+        out[s] = z;
+      }
+    } finally { stufe = alt; }
+    return out;
+  };
   R_.spiel(def);
   vorplan = planen();
   stufenFigur(stufe);   // Figur fürs Zwischenbild schon beim Startbild laden und umfärben

@@ -30,8 +30,8 @@ window.KUNDE = {
   // link leer = Knopf nur sichtbar, aber ohne Ziel (Musterfirma)
   ausbildung: { text: 'Lust auf echte Einsätze? Mach deine Ausbildung bei Muster Haustechnik.', knopf: 'Zur Ausbildung', link: '' },
 
-  // Meister-Figur (für Kunden tauschbar: eigenes freigestelltes Foto, eigener Name)
-  meister: { name: 'Meister Lehner' },
+  // Helfer-Figur „der Chef“ (für Kunden tauschbar; rolle 'Chef' oder 'Chefin' – das Spiel passt die Wendungen an)
+  meister: { name: 'Georg Lehner', nachname: 'Lehner', rolle: 'Chef' },
 
   // Kontaktdaten im Footer (Startseite, MZ 24.10.2026). Datenschutz/Impressum nur unterstrichen, nichts verlinkt.
   // vor jedem „–“ ein geschütztes Leerzeichen (\u00a0), damit der Strich nie am Zeilenanfang steht (die Startseite ergänzt es sonst selbst)

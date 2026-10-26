@@ -233,12 +233,15 @@ button.rb-packteil { cursor: pointer; } button.rb-packteil:hover { border-color:
 .rb-packteil i { font-style: normal; color: var(--leise); font-size: 11px; margin-left: 1px; }
 
 /* Meister: Packliste nach „Fertig gepackt“ */
-.rb-packpruefung { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.rb-packpruefung { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; }   /* Inhalt oben (Supervisor 26.10.2026) */
 .rb-packpruefung .rb-packsatz { margin: 0; font-weight: 700; font-size: 15px; color: var(--dunkel); }
 .rb-packpruefung ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
 .rb-packpruefung li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: 8px; font-size: 14px; background: #f2f4f6; animation: rbEin .3s ease-out both; }
-.rb-packpruefung li.gut { color: var(--gut); font-weight: 600; }
+.rb-packpruefung li.gut { display: block; color: var(--gut); font-weight: 600; }   /* Haken + Name + Fachwort als Fließtext, nicht als Flex-Teile auseinandergezogen */
 .rb-packpruefung li.fehlt, .rb-packpruefung li.unnoetig { background: #f9e3df; color: var(--falsch); }
+/* falscher Freund (MZ, 26.10.2026): warum-Satz klein unter „Unnötig: …“ */
+.rb-packpruefung li .rb-warum { display: block; margin-top: 2px; font-size: 13px; line-height: 1.3; font-weight: 400; color: #5a3a35; }
+.rb-nah.packpruefung.knapp .rb-packpruefung li .rb-warum { margin-top: 1px; font-size: 12px; line-height: 1.25; }
 /* zu flach (spiel.js packEinpassen): Eingepacktes als Reihe kleiner Marken, Abzugszeilen enger */
 .rb-nah.packpruefung.knapp { padding-top: 6px; padding-bottom: 8px; gap: 4px; }
 .rb-nah.packpruefung.knapp .rb-nahkopf { min-height: 28px; }
@@ -249,7 +252,7 @@ button.rb-packteil { cursor: pointer; } button.rb-packteil:hover { border-color:
 .rb-nah.packpruefung.knapp .rb-packsatz { font-size: 14px; }
 .rb-packpruefung li.summe { background: none; border-top: 1px solid #d5d9dd; border-radius: 0; padding-top: 7px; font-weight: 700; color: var(--dunkel); }
 /* flach quer (über Raum und Leiste): Liste links, Satz und Knopf rechts */
-.rb-nah.packpruefung.breit .rb-packpruefung { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 40%); grid-template-areas: "liste satz" "liste knopf"; column-gap: 16px; align-content: center; }
+.rb-nah.packpruefung.breit .rb-packpruefung { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 40%); grid-template-areas: "liste satz" "liste knopf"; column-gap: 16px; align-content: start; }
 .rb-nah.packpruefung.breit .rb-packpruefung ul { grid-area: liste; }
 .rb-nah.packpruefung.breit .rb-packsatz { grid-area: satz; align-self: end; }
 .rb-nah.packpruefung.breit .rb-packpruefung > .rb-knopf { grid-area: knopf; align-self: start; }

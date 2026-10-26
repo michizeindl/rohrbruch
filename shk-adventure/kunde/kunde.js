@@ -39,9 +39,10 @@ window.KUNDE = {
   // Abschlussbild: Gedankenwolke der Figur (Satz in Ich-Form) an/aus
   abschlussGedanke: true,
 
-  // Meister-Figur (für Kunden tauschbar: eigenes freigestelltes Foto, eigener Name)
+  // Helfer-Figur „der Chef“ (für Kunden tauschbar: eigenes freigestelltes Foto, eigener Name; MZ 26.10.2026 Chef statt Meister)
   // nachname = {meister} in den Spieltexten („Lehner hier.“); fehlt er, nimmt das Spiel das letzte Wort von name
-  meister: { name: 'Meister Lehner', nachname: 'Lehner' },
+  // rolle: 'Chef' oder 'Chefin' – bei 'Chefin' passt das Spiel die Wendungen an („der Chef“ → „die Chefin“, „den Chef“ → „die Chefin“ …)
+  meister: { name: 'Georg Lehner', nachname: 'Lehner', rolle: 'Chef' },
 
   // Regionale Fassungen (MZ, 25.10.2026): Spieltexte sind Hochdeutsch; true = einzelne Sätze bairisch
   // (Liste Material/Texte/rohrbruch-regional-entwurf.md). Musterfirma: an.

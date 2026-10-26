@@ -405,11 +405,16 @@ window.ROHRBRUCH_WERKZEUG = {
     { blatt: 'bilder/ablenker-3.webp', spalten: 4, zeilen: 3, liste: ['Gartenschere', 'Rasensprenger', 'Grillzange', 'Windlicht',
       'Sack Blumenerde', 'Gartenzwerg', 'Federballschläger', 'Mausefalle', 'Tischventilator', 'Ordner mit Rechnungen', 'Wäscheständer', 'Schaukelpferd'] },
     { blatt: 'bilder/ablenker-4.webp', spalten: 4, zeilen: 3, liste: ['Salzstreuer', 'Klebeband', 'Nudelholz', 'Kaffeedose',
-      '(alt) Kerze', 'Kochbuch', 'Glas Essiggurken', 'Fahrradschlauch', 'Paketklebeband', 'Nordic-Walking-Stöcke', 'Wäscheklammern', '(alt) Alter Malerpinsel'] },
+      '(alt) Kerze', 'Kochbuch', 'Glas Essiggurken', 'Fahrradschlauch', '(alt) Paketklebeband', 'Nordic-Walking-Stöcke', 'Wäscheklammern', '(alt) Alter Malerpinsel'] },
     { blatt: 'bilder/ablenker-5.webp', spalten: 4, zeilen: 3, liste: ['Kuscheldecke', 'Fernseh-Fernbedienung', 'Fernsehzeitschrift', 'Orchideendünger',
       'Spielzeugauto', 'Handy-Ladekabel', 'Stressball', 'Notizblock', 'Locher', 'Klebefilm-Abroller', 'Massageöl', 'Handdesinfektionsmittel'] },
     // Ersatz nach der QA (24.10.2026); die mit „(alt)“ markierten Zellen oben werden nicht mehr verwendet
     { blatt: 'bilder/ablenker-6.webp', spalten: 3, zeilen: 2, liste: ['Kiste Leergut', 'Pfannenwender', 'Bademantel', 'Brotkorb', 'Wollmütze', 'Abdeckplane'] },
+    // Falsche Freunde (MZ, 26.10.2026; Original rohrbruch-freunde-1b.png bzw. -2.png, rohrbruch-bilder.py freunde). Paketklebeband
+    // (Ablenker HA) ist entfallen (Ersatz Sonnenschirm). freunde-2: Sonnenschirm, Hammer, Verlängerungskabel, Heißklebepistole (QA, 26.10.2026)
+    { blatt: 'bilder/freunde-1.webp', spalten: 4, zeilen: 3, liste: ['Kriechöl', 'Haushaltszange', 'Gummihandschuhe', 'Chemischer Abflussreiniger',
+      'Akkuschrauber', 'Zollstock', 'Silikonkartusche', 'Gartenschlauch', 'Panzertape', 'Kabelbinder', 'Alte Zahnbürste', 'Wasserwaage'] },
+    { blatt: 'bilder/freunde-2.webp', spalten: 2, zeilen: 2, liste: ['Sonnenschirm', 'Hammer', 'Verlängerungskabel', 'Heißklebepistole'] },
     // Motive der Zwischenfälle (Phase 3, Original rohrbruch-zwischenfall.png); Visitenkarten-Streifen #00FF00 → Hausfarbe („#gruen“)
     { blatt: 'bilder/zwischenfall.webp#gruen', spalten: 3, zeilen: 2, liste: ['Lichtschalter', 'Sicherungskasten', 'Taube', 'Visitenkarten',
       'Taschenlampe eingeschaltet', 'Tasse Kaffee'] },
