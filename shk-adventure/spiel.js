@@ -718,7 +718,7 @@
   function stufenBild() {
     return new Promise(fertig => {
       klangSzene('titel');
-      const st = ST(), f = SF[stufe], dauer = RB.ruhig ? 2 : 3;
+      const st = ST(), f = SF[stufe], dauer = RB.ruhig ? 3.2 : 4.2;   // MZ 26.10.2026: je 1,2s länger (vorher 3s/2s)
       const box = el('div', 'rb-stufenbild');
       const platz = el('div', 'rb-stufenfigur'), fig = el('img', 'rb-figur');
       fig.alt = st.name; platz.append(fig);
