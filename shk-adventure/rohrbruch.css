@@ -466,6 +466,18 @@ html.rb-ruhig .hg-knopf.bereit { animation: none; box-shadow: 0 0 0 3px color-mi
 @media (max-width: 359px) { .rb-startinhalt { padding-left: 12px; padding-right: 12px; gap: 14px; } #startSchirm .rb-logoquer { height: 34px; }
   #startSchirm .rb-startkarte .anleitung { font-size: 14.5px; } .rb-startkarte { padding: 13px 14px; } }
 @media (min-width: 760px) and (min-height: 540px) { #startSchirm .rb-logoquer { height: 48px; } }
+/* sehr niedrige Handys hochkant (320×568 u. Ä., MZ 27.10.2026): alles etwas kompakter, damit zwischen Display und Karte ein
+   Streifen der Anlage sichtbar bleibt (vorher ca. 53 px). Schrift bleibt ≥ 14px, Knöpfe ≥ 44 px hoch; größere Formate unverändert. */
+@media (max-height: 600px) and (max-aspect-ratio: 1/1) {
+  #startSchirm:not(.quer) .rb-startinhalt { gap: 10px; padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  #startSchirm:not(.quer) .rb-startlinks { margin-top: 4px; }
+  #startSchirm:not(.quer) .rb-display { padding: 6px 0 8px; }
+  #startSchirm:not(.quer) .rb-startrechts { gap: 8px; }
+  #startSchirm:not(.quer) .rb-startkarte { padding: 10px 13px; }
+  #startSchirm:not(.quer) .rb-startkarte .anleitung { font-size: 14px; line-height: 1.42; }
+  #startSchirm:not(.quer) .rb-startknoepfe { gap: 8px; }
+  .stil-rohrbruch #startSchirm:not(.quer) .rb-startknoepfe .knopf { min-height: 44px; padding-top: 9px; padding-bottom: 9px; }
+}
 /* quer und flach: Logo oben über die ganze Breite, darunter Display links, Karte + Knöpfe rechts */
 #startSchirm.quer .rb-startinhalt { width: min(900px, 100%); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 26px; row-gap: 10px;
   grid-template-rows: auto 1fr; grid-template-areas: "logo logo" "links rechts"; align-items: center;

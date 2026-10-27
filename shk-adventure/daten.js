@@ -2681,7 +2681,7 @@ window.ROHRBRUCH = {
    "unnoetig": [
     "Das brauchst du hier nicht.",
     "Unnötig – das bleibt hier.",
-    "Für diese Reparatur schleppst du das umsonst mit."
+    "Das brauchst du für diese Reparatur nicht."
    ],
    "wackelnKlein": [
     "Etwas mehr Schwung, da sitzt noch alles fest.",

@@ -55,6 +55,7 @@
   // #zwischenfall (sicher einer, nach 3s Uhr) bzw. #zwischenfall=Z-02 (genau dieser) – #keinzwischenfall
   // #buch (Einsatzbuch-Ansicht, Zurück zum Menü)  #tier (Katze/Hund kommt nach 1s)
   // #freunde=0|1|2 (falsche Freunde je Einsatz erzwingen, MZ 26.10.2026; #freunde = 2) – RB.verteilung(n) würfelt n Einsätze
+  // #keingemerkt: offline keinen gemerkten Durchgang nehmen (immer würfeln) – RB.planInfo zeigt, was offline geplant wurde
   const HASH = {};
   const hashLesen = (ziel) => { decodeURIComponent(location.hash.slice(1)).split(/[&#]/).forEach(t => { if (!t) return; const [k, v] = t.split('='); ziel[k.trim()] = v == null ? true : v.trim(); }); return ziel; };
   hashLesen(HASH);
@@ -370,6 +371,48 @@
   function offlineOrte(menge) {
     return Object.keys(D.orte).filter(o => D.orte[o].vorrat || imSpeicher(menge, 'daten-' + o.toLowerCase() + '.js'));
   }
+  // ---------- Zuletzt abgelegte Durchgänge merken (MZ, 27.10.2026, Runde nach Release 5) ----------
+  // Ein Durchgang ist durch seine drei Einsatz-Kennungen und eine Saat (Startwert des Zufalls) vollständig bestimmt: alles, was
+  // beim Planen gewürfelt wird (Variante, Kundenfigur, Stellen und ihre Texte, Verstecke mit falschen Freunden/Ablenkern,
+  // Zwischenfall, Inhalt von Koffer und Transporter, Kekse), läuft über einen Zufall mit dieser Saat – gleiche Kennungen + gleiche
+  // Saat = genau derselbe Durchgang. Beim Ablegen (durchgangAblegen, nur mit Verbindung) merkt sich das Spiel {stufe, ids, saat}
+  // in localStorage (PLAN_KEY, die letzten PLAN_MERKEN). Offline nimmt planen() zuerst einen gemerkten Plan (gleiche Stufe zuerst,
+  // jeweils der neueste), wenn ALLE seine Dateien im Zwischenspeicher liegen – auch mehrmals hintereinander; sonst würfelt es wie
+  // bisher. Online bleibt alles zufällig (neue Saat je Plan). Ein gemerkter Plan einer anderen Stufe kommt nur, wenn seine Störungen
+  // auch zur gespielten Stufe gehören (und dann ebenfalls nur vollständig).
+  const PLAN_KEY = 'mg:plan:rohrbruch:' + firma, PLAN_MERKEN = 4;
+  function saatZufall(saat) {   // mulberry32: kleiner, schneller Zufall mit Startwert (0 ≤ x < 1 wie Math.random)
+    let a = saat >>> 0;
+    return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  // fn läuft synchron mit dem Zufall der Saat (zufall/mischen/Math.random); danach gilt wieder der normale Zufall
+  function mitSaat(saat, fn) { const alt = Math.random; Math.random = saatZufall(saat); try { return fn(); } finally { Math.random = alt; } }
+  const neueSaat = () => (Math.random() * 4294967296) >>> 0;
+  function gemerktePlaene() {
+    try { const l = JSON.parse(lesen(PLAN_KEY) || '[]'); return Array.isArray(l) ? l.filter(p => p && Array.isArray(p.ids) && typeof p.saat === 'number') : []; } catch (e) { return []; }
+  }
+  function planMerken(plan) {
+    if (!plan.ids || plan.ids.length !== EINSAETZE || typeof plan.saat !== 'number') return;
+    const neu = { stufe: plan.stufe, ids: plan.ids.slice(), saat: plan.saat, zeit: Date.now() };
+    const l = gemerktePlaene().filter(p => !(p.stufe === neu.stufe && String(p.ids) === String(neu.ids) && p.saat === neu.saat));
+    l.unshift(neu);
+    schreiben(PLAN_KEY, JSON.stringify(l.slice(0, PLAN_MERKEN)));
+  }
+  // Einsätze aus Kennungen + Saat anlegen (Ort-Daten vorher laden – das ist asynchron, gewürfelt wird danach in einem Stück)
+  async function einsaetzeBauen(ids, saat) {
+    await Promise.all([...new Set(ids.map(id => id.slice(0, 2)))].map(ortHolen));
+    const liste = ids.map(id => D.stoerungen.find(s => s.id === id)).filter(Boolean);
+    // je Teil eine eigene, aus der Saat abgeleitete Folge: entfällt ein Teil (z. B. #keinzwischenfall), bleiben die anderen gleich
+    const teilSaat = n => (saat ^ Math.imul(n + 1, 0x9E3779B9)) >>> 0;
+    const einsaetze = mitSaat(saat, () => {
+      const benutzt = [];   // dieselbe Figur möglichst nicht zweimal in einem Durchgang
+      return liste.map((st, i) => { const e = einsatzAnlegen(st, i, benutzt); benutzt.push(e.figur); return e; });
+    });
+    mitSaat(teilSaat(0), () => zwischenfallPlanen(einsaetze));
+    // Koffer- und Transporter-Inhalt gleich mitwürfeln (sonst erst beim Ablegen bzw. Öffnen – dann ohne Saat)
+    einsaetze.forEach((e, i) => mitSaat(teilSaat(1 + i), () => { lagerInhalt('koffer', e); lagerInhalt('transporter', e); }));
+    return einsaetze;
+  }
   // Einsätze (Variante, Figur, Verstecke, Zwischenfall) gleich mit anlegen – so steht fest, welche Dateien der Durchgang
   // braucht, und sie können schon abgelegt werden (offline, QA Phase 4)
   function planen() {
@@ -378,24 +421,38 @@
       const offline = navigator.onLine === false && !!window.caches && location.protocol !== 'file:';
       const menge = offline ? await speicherMenge() : null, t0 = performance.now();
       const nurOrte = offline ? offlineOrte(menge) : null;
+      // offline: zuerst ein gemerkter Plan, dessen Dateien vollständig im Zwischenspeicher liegen (Testhilfe #keingemerkt = aus)
+      if (offline && !HASH.einsatz && !HASH.keingemerkt) {
+        const passt = id => D.katalog.some(k => k.id === id && k.stufen.includes(stufe) && ortErlaubt(k.ort)) && nurOrte.includes(id.slice(0, 2));
+        const kandidaten = gemerktePlaene().filter(p => p.ids.length === EINSAETZE && p.ids.every(passt));
+        kandidaten.sort((a, b) => (b.stufe === stufe) - (a.stufe === stufe));   // stabil: je Gruppe der neueste zuerst
+        let geprueft = 0;
+        for (const p of kandidaten) {
+          geprueft++;
+          const es = await einsaetzeBauen(p.ids, p.saat);
+          if (es.length !== EINSAETZE) continue;
+          const fehlend = durchgangDateien(es).filter(u => !imSpeicher(menge, u));
+          if (fehlend.length) continue;
+          plan.ids = p.ids.slice(); plan.saat = p.saat; plan.gemerkt = true; plan.einsaetze = es;
+          RB.planInfo = { gemerkt: true, stufeGemerkt: p.stufe, geprueft, wuerfe: 0, fehlt: 0, ms: Math.round(performance.now() - t0), imSpeicher: menge.size };   // Testhilfe
+          return es;
+        }
+        RB.planInfoGemerkt = { geprueft, kandidaten: kandidaten.length };   // Testhilfe: kein vollständiger gemerkter Plan
+      }
       let einsaetze = [], bester = null, versuch = 0;
       for (; versuch < (offline ? 40 : 1); versuch++) {
-        const ids = idsZiehen(nurOrte && nurOrte.length ? nurOrte : null);
-        await Promise.all([...new Set(ids.map(id => id.slice(0, 2)))].map(ortHolen));
-        const liste = ids.map(id => D.stoerungen.find(s => s.id === id)).filter(Boolean);
-        const benutzt = [];   // dieselbe Figur möglichst nicht zweimal in einem Durchgang
-        einsaetze = liste.map((st, i) => { const e = einsatzAnlegen(st, i, benutzt); benutzt.push(e.figur); return e; });
-        zwischenfallPlanen(einsaetze);
-        plan.ids = ids;
+        const ids = idsZiehen(nurOrte && nurOrte.length ? nurOrte : null), saat = neueSaat();
+        einsaetze = await einsaetzeBauen(ids, saat);
+        plan.ids = ids; plan.saat = saat;
         if (!offline) break;
         // fehlende Dateien zählen; ein fehlendes Raumbild wiegt schwer (Raum ohne Bild), eine Kundenfigur mittel (sonst steht im
         // Gespräch nur ihr Name, QA Release 5), Lupen- oder Gegenstandsblatt wenig
         const fehlt = durchgangDateien(einsaetze).reduce((n, u) => n + (imSpeicher(menge, u) ? 0 : /\/raum-|daten-/.test(u) ? 100 : /\/figur-/.test(u) ? 10 : 1), 0);
-        if (!bester || fehlt < bester.fehlt) bester = { fehlt, einsaetze, ids };
+        if (!bester || fehlt < bester.fehlt) bester = { fehlt, einsaetze, ids, saat };
         if (!fehlt || performance.now() - t0 > PLAN_ZEIT) break;
       }
-      if (bester) { einsaetze = bester.einsaetze; plan.ids = bester.ids; }
-      if (offline) RB.planInfo = { wuerfe: Math.min(versuch + 1, 40), fehlt: bester ? bester.fehlt : null, ms: Math.round(performance.now() - t0), imSpeicher: menge.size };   // Testhilfe
+      if (bester) { einsaetze = bester.einsaetze; plan.ids = bester.ids; plan.saat = bester.saat; }
+      if (offline) RB.planInfo = { gemerkt: false, wuerfe: Math.min(versuch + 1, 40), fehlt: bester ? bester.fehlt : null, ms: Math.round(performance.now() - t0), imSpeicher: menge.size };   // Testhilfe
       plan.einsaetze = einsaetze;
       return einsaetze;
     })();
@@ -412,7 +469,13 @@
       const sw = navigator.serviceWorker;
       if (!sw || location.protocol === 'file:') return;
       const liste = durchgangDateien(einsaetze);
-      sw.ready.then(reg => { if (reg.active) reg.active.postMessage({ typ: 'ablegen', dateien: liste }); }).catch(() => {});
+      sw.ready.then(reg => {
+        if (!reg.active) return;
+        reg.active.postMessage({ typ: 'ablegen', dateien: liste });
+        // mit Verbindung: diesen Durchgang merken, offline kommt er zuerst wieder (MZ, 27.10.2026; ohne Verbindung lädt der
+        // Service Worker nichts nach – dann nichts merken, der gemerkte vollständige Plan bleibt vorn)
+        if (navigator.onLine !== false) planMerken(plan);
+      }).catch(() => {});
       RB.abgelegt = liste;   // Testhilfe
     }).catch(() => {});
   }
