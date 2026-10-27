@@ -351,12 +351,24 @@
     return ids;
   }
   // Ohne Verbindung (navigator.onLine false) nur Einsätze, deren Dateien schon im Zwischenspeicher liegen (Service Worker):
-  // Orte mit geladenen bzw. abgelegten Daten, bis zu 25 Würfe, bis alle Dateien da sind – sonst der letzte Wurf
-  const imSpeicher = u => (window.caches ? caches.match(new URL(u, location.href).href, { ignoreSearch: true }) : Promise.resolve(null)).catch(() => null);
-  async function offlineOrte() {
-    const alle = Object.keys(D.orte);
-    const da = await Promise.all(alle.map(o => (D.orte[o].vorrat ? Promise.resolve(true) : imSpeicher('daten-' + o.toLowerCase() + '.js'))));
-    return alle.filter((o, i) => da[i]);
+  // Orte mit geladenen bzw. abgelegten Daten, bis zu 40 Würfe, bis alle Dateien da sind – sonst der beste Wurf.
+  // QA Release 5 (S2): früher fragte jeder Wurf rund 150 Dateien einzeln per caches.match (ignoreSearch) ab – 40 Würfe
+  // = rund 5.400 Abfragen, offline nach dem Neuladen dauerte der Start so 30s (Desktop) bis Minuten (Handy). Jetzt werden
+  // die Schlüssel des Zwischenspeichers einmal als Menge eingelesen (ohne ?…, wie ignoreSearch), danach nur verglichen;
+  // dazu eine Zeitgrenze (PLAN_ZEIT) mit Rückfall auf den besten bisherigen Wurf.
+  const PLAN_ZEIT = 1500;   // ms
+  const ohneSuche = u => String(u).split('#')[0].split('?')[0];
+  async function speicherMenge() {
+    const menge = new Set();
+    if (!window.caches) return menge;
+    try {
+      for (const n of await caches.keys()) (await (await caches.open(n)).keys()).forEach(r => menge.add(ohneSuche(r.url)));
+    } catch (e) { /* kein Zugriff: Menge bleibt leer */ }
+    return menge;
+  }
+  const imSpeicher = (menge, u) => menge.has(ohneSuche(new URL(u, location.href).href));
+  function offlineOrte(menge) {
+    return Object.keys(D.orte).filter(o => D.orte[o].vorrat || imSpeicher(menge, 'daten-' + o.toLowerCase() + '.js'));
   }
   // Einsätze (Variante, Figur, Verstecke, Zwischenfall) gleich mit anlegen – so steht fest, welche Dateien der Durchgang
   // braucht, und sie können schon abgelegt werden (offline, QA Phase 4)
@@ -364,9 +376,10 @@
     const plan = { stufe, abgelegt: false };
     plan.fertig = (async () => {
       const offline = navigator.onLine === false && !!window.caches && location.protocol !== 'file:';
-      const nurOrte = offline ? await offlineOrte() : null;
-      let einsaetze = [], bester = null;
-      for (let versuch = 0; versuch < (offline ? 40 : 1); versuch++) {
+      const menge = offline ? await speicherMenge() : null, t0 = performance.now();
+      const nurOrte = offline ? offlineOrte(menge) : null;
+      let einsaetze = [], bester = null, versuch = 0;
+      for (; versuch < (offline ? 40 : 1); versuch++) {
         const ids = idsZiehen(nurOrte && nurOrte.length ? nurOrte : null);
         await Promise.all([...new Set(ids.map(id => id.slice(0, 2)))].map(ortHolen));
         const liste = ids.map(id => D.stoerungen.find(s => s.id === id)).filter(Boolean);
@@ -375,13 +388,14 @@
         zwischenfallPlanen(einsaetze);
         plan.ids = ids;
         if (!offline) break;
-        // fehlende Dateien zählen; ein fehlendes Raumbild wiegt schwer (Raum ohne Bild), Figur oder Lupenblatt weniger
-        const dateien = durchgangDateien(einsaetze), da = await Promise.all(dateien.map(imSpeicher));
-        const fehlt = dateien.reduce((n, u, i) => n + (da[i] ? 0 : /\/raum-|daten-/.test(u) ? 100 : 1), 0);
+        // fehlende Dateien zählen; ein fehlendes Raumbild wiegt schwer (Raum ohne Bild), eine Kundenfigur mittel (sonst steht im
+        // Gespräch nur ihr Name, QA Release 5), Lupen- oder Gegenstandsblatt wenig
+        const fehlt = durchgangDateien(einsaetze).reduce((n, u) => n + (imSpeicher(menge, u) ? 0 : /\/raum-|daten-/.test(u) ? 100 : /\/figur-/.test(u) ? 10 : 1), 0);
         if (!bester || fehlt < bester.fehlt) bester = { fehlt, einsaetze, ids };
-        if (!fehlt) break;
+        if (!fehlt || performance.now() - t0 > PLAN_ZEIT) break;
       }
       if (bester) { einsaetze = bester.einsaetze; plan.ids = bester.ids; }
+      if (offline) RB.planInfo = { wuerfe: Math.min(versuch + 1, 40), fehlt: bester ? bester.fehlt : null, ms: Math.round(performance.now() - t0), imSpeicher: menge.size };   // Testhilfe
       plan.einsaetze = einsaetze;
       return einsaetze;
     })();
@@ -1463,7 +1477,7 @@
   // „Wasserstand: über Überlauf“, „Durchfluss 0,0 l/min“ ragten aus dem Kreis). richtung −1 = von unten nach oben stapeln.
   // Gibt die belegte Höhe zurück.
   function schildKreis(g, k, y, text, fs, lcd, richtung) {
-    const FONT = n => `700 ${n}px ` + (lcd ? 'ui-monospace, "Cascadia Mono", Consolas, monospace' : 'system-ui, sans-serif');
+    const FONT = n => `700 ${n}px ` + (lcd ? 'ui-monospace, "Cascadia Mono", Consolas, monospace' : 'Barlow, system-ui, sans-serif');   // Barlow überall (MZ), Geräte-Display bleibt
     const breite = (zeilen, n) => { g.save(); g.font = FONT(n); const b = Math.max(...zeilen.map(z => g.measureText(z).width)); g.restore(); return b + n * (lcd ? 1.4 : 1.1); };
     const hoehe = (zeilen, n) => n * (zeilen.length === 1 ? 1.6 : 0.4 + 1.25 * zeilen.length);
     const passt = (zeilen, n, ym) => { const hh = hoehe(zeilen, n), fern = Math.abs(ym - k.y) + hh / 2; if (fern >= k.r) return false;
@@ -1627,7 +1641,7 @@
     } else optionen = [{ text: st.diagnose.richtig, richtig: 'haupt', alltag: st.diagnose.richtigAlltag }].concat(mischen(st.diagnose.falsch).slice(0, n - 1));
     optionen = E.optionen || (E.optionen = mischen(optionen));
     const liste = el('div', 'rb-optionen'), rueck = el('p', 'rb-rueck');
-    const kopf = el('p', 'rb-diagfrage', E.m2 ? 'Hier stecken zwei Ursachen dahinter – finde beide.' : zufall(D.rahmen.diagnoseFrage));
+    const kopf = el('p', 'rb-diagfrage', E.m2 ? 'Hier stecken zwei Ursachen dahinter – finde beide.' : (E.diagFrage = E.diagFrage || zufall(D.rahmen.diagnoseFrage)));   // je Einsatz fest
     const optBenutzt = new Set();   // QA S3 (8): auf dem Ursachen-Bildschirm jeden Begriff nur einmal unterstreichen
     optionen.forEach(o => {
       const b = knopf('', 'option');
@@ -1698,7 +1712,13 @@
   // ein und aus, bis er „Fertig gepackt“ tippt – dann kosten Fehlendes und Unnötiges je −20.
   const T = (k, ersatz, werte) => RB.rueck(k, ersatz, werte);
   const knoepfeWerkzeug = () => { const k = D.rahmen.knoepfeWerkzeug; return k && k.length === 3 ? k : ['Werkzeugkoffer', 'Transporter', 'Im Raum suchen']; };
-  const anzahlText = () => E.brauche.length === 1 ? T('anzahlPackenEins', 'Du brauchst nur 1 Ding.') : T('anzahlPacken', 'Du brauchst {n} Dinge.', { n: E.brauche.length });
+  // Satz zur Anzahl (Geselle): einmal je Einsatz gewürfelt und dann beibehalten (MZ, 27.10.2026) – leiste() baut oft neu auf
+  // Zahlen bis zwölf im Fließtext ausgeschrieben (Projektregel, MZ 26.10.2026; QA Release 5): {n} wird hier zum Zahlwort,
+  // die Vorlagen in daten.js bleiben „{n}“. Anzeigen wie „Eingepackt 0/3“ bleiben Ziffern.
+  const ZAHLWORT = ['null', 'ein', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn', 'elf', 'zwölf'];
+  const zahlWort = n => ZAHLWORT[n] || String(n);
+  const anzahlText = () => E.anzahlSatz || (E.anzahlSatz = E.brauche.length === 1 ? T('anzahlPackenEins', 'Du brauchst nur ein Ding.')
+    : T('anzahlPacken', 'Du brauchst {n} Dinge.', { n: zahlWort(E.brauche.length) }));
   const istNoetig = name => E.brauche.some(b => b.name === name);
   // Azubi wählt ein Teil der Packliste, das nicht das Hauptwerkzeug ist: immer genau MZs Satz, keine Varianten (MZ, 24.10.2026)
   const NICHT_WICHTIGSTE = 'Stimmt, aber du brauchst etwas anderes mehr.';
@@ -1720,7 +1740,7 @@
   }
   function werkzeugPhase() {
     E.phase = 'werkzeug';
-    E.werkzeugText = zufall(D.rahmen.werkzeugsuche);
+    E.werkzeugText = E.werkzeugText || zufall(D.rahmen.werkzeugsuche);   // Aufgabensatz der Leiste: einmal je Einsatz (MZ, 27.10.2026)
     E.herkunftHinweis = stufe === 'azubi';
     E.raumSuche = false; E.wahl = null;
     leiste(); markenSetzen();
@@ -1876,7 +1896,7 @@
     const w = freundWarum(name);
     if (w) return imFund || w.toLowerCase().includes(name.toLowerCase()) ? w : name + ': ' + w;
     const t = T('unnoetig', '{werkzeug} brauchst du hier nicht.', { werkzeug: name });
-    return t.includes(name) ? t : name + ': ' + t;
+    return t.includes(name) || imFund ? t : name + ': ' + t;   // im Fund-Fenster ohne Namen davor (steht als Überschrift darüber)
   }
   function auspacken(name) {
     E.eingepackt = E.eingepackt.filter(n => n !== name);
@@ -1936,7 +1956,7 @@
     const summe = el('li', 'summe');
     summe.append(el('span', '', 'Werkzeug'), el('b', '', Math.max(0, P.werkzeug - P.fehlgriff * E.fehlWerk) + '/' + P.werkzeug));
     ul.append(summe);
-    // je ein Satz aus dem Rahmen-Entwurf („Fehlt noch“, „Unnötig eingepackt“)
+    // je ein Satz aus dem Rahmen-Entwurf („Fehlt noch“, „Unnötig“ – früher „Unnötig eingepackt“, MZ 27.10.2026: „Unnötig – das bleibt hier.“)
     const saetze = (fehlt.length ? [T('fehltNoch', 'Da fehlt noch etwas.')] : []).concat(unnoetig.length || schonAbgezogen.length ? [T('unnoetig', 'Das brauchst du hier nicht.')] : []);
     box.append(el('p', 'rb-packsatz', saetze.join(' ')), ul, knopf('Weiter', 'haupt', () => { if (raus) return ausscheiden(true); nahWeg(); sicherheit(); }));   // ausgeschieden: Liste bleibt bis „Weiter“
     nahZeigen('packpruefung', 'Packliste', [box], false);

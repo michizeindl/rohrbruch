@@ -2461,9 +2461,9 @@ window.ROHRBRUCH = {
    "raum": "Muss hier irgendwo im Raum liegen."
   },
   "aufschluesselung": {
-   "viele": "Ursache {n}/3 sofort – {f} Fehlgriffe – Ø {zeit} pro Einsatz",
-   "eins": "Ursache {n}/3 sofort – 1 Fehlgriff – Ø {zeit} pro Einsatz",
-   "keiner": "Ursache {n}/3 sofort – kein Fehlgriff – Ø {zeit} pro Einsatz"
+   "viele": "Ursache {n}/3 sofort – {f} Fehler – Ø {zeit} pro Einsatz",
+   "eins": "Ursache {n}/3 sofort – 1 Fehler – Ø {zeit} pro Einsatz",
+   "keiner": "Ursache {n}/3 sofort – kein Fehler – Ø {zeit} pro Einsatz"
   },
   "ausbildung": "Lust auf echte Einsätze? Mach deine Ausbildung bei {firma}.",
   "ausbildungKnopf": "Zur Website",
@@ -2666,7 +2666,7 @@ window.ROHRBRUCH = {
     "Für diese Reparatur brauchst du {n} Dinge."
    ],
    "anzahlPackenEins": [
-    "Du brauchst nur 1 Ding."
+    "Du brauchst nur ein Ding."
    ],
    "nochNichtAlles": [
     "Kommt mit. Noch offen: {rest}.",
@@ -2680,7 +2680,7 @@ window.ROHRBRUCH = {
    ],
    "unnoetig": [
     "Das brauchst du hier nicht.",
-    "Unnötig eingepackt – das bleibt hier.",
+    "Unnötig – das bleibt hier.",
     "Für diese Reparatur schleppst du das umsonst mit."
    ],
    "wackelnKlein": [

@@ -60,12 +60,12 @@
     // Name des Orts groß und blass
     const name = String(od.name || kz).split(' | ')[v === 'B' ? 1 : 0] || od.name;
     g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillStyle = 'rgba(0,0,0,.08)'; g.font = '800 120px system-ui, sans-serif';
+    g.fillStyle = 'rgba(0,0,0,.08)'; g.font = '800 120px Barlow, system-ui, sans-serif';
     umbrechen(g, name, 940).forEach((z, i, a) => g.fillText(z, 512, 400 + (i - (a.length - 1) / 2) * 130));
-    g.fillStyle = 'rgba(0,0,0,.45)'; g.font = '600 26px system-ui, sans-serif';
+    g.fillStyle = 'rgba(0,0,0,.45)'; g.font = '600 26px Barlow, system-ui, sans-serif';
     g.fillText('Platzhalter – ' + name + ' (Variante ' + v + ')', 512, 46);
     // Stellen: helles Kärtchen unter der Marke
-    g.font = '600 19px system-ui, sans-serif';
+    g.font = '600 19px Barlow, system-ui, sans-serif';
     Object.entries(stellen).forEach(([n, [x, y]]) => {
       g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.arc(x, y, 34, 0, Math.PI * 2); g.fill();
       const z = umbrechen(g, n, 170);

@@ -89,14 +89,16 @@ button { font: inherit; }
 .folie.aktiv .figur:hover .figur-bild { transform: translateY(-3px); }
 .westenlogo { position: absolute; z-index: 1; object-fit: contain; pointer-events: none; transform: scale(.82); opacity: 0; transition: opacity .3s ease; }
 .figur.bereit .westenlogo { opacity: 1; }
-/* Manometer-Plakette rechts unten an der Figur */
-.plakette { position: absolute; z-index: 2; left: 58%; bottom: 3%; height: 29%; min-height: 60px; max-height: 128px; aspect-ratio: 1; padding: 5px;
-  border-radius: 50%; background: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.28); }
-/* kleinstes Handy (bis 359 px breit) und sehr niedrige Fenster (bis 420 px hoch, z. B. 568×320 quer): dort greift sonst die
-   Mindestgröße 60 px und die Plakette deckt die Beine – kleiner und weiter nach außen (MZ, 27.10.2026). Größere Formate unverändert. */
-@media (max-width: 359px), (max-height: 420px) {
-  .plakette { left: 86%; height: 24%; min-height: 44px; padding: 4px; }
-}
+/* Manometer-Plakette rechts neben den Beinen, ohne die Figur zu berühren – in allen Formaten (MZ, 27.10.2026; vorher nur auf dem
+   kleinsten Handy, sonst lag sie über den Beinen). Beine und Schuhe der drei Figuren reichen bis ca. 95 % der Figurenbreite, die
+   Plakette beginnt bei 97 % + 4 px. Größe: ca. 26 % der Bühnenhöhe (Container .buehne), 44–108 px, und nie breiter als der Platz
+   rechts neben der Figur bis zum Bühnenrand (50cqw − 0,45 × Figurenbreite − 10 px) – so bleibt sie in der Bühne; die Pfeile
+   (Mitte auf 45 % der Höhe) und die Pille (oben links) liegen höher und werden nicht verdeckt. */
+.buehne { container-type: size; }
+.plakette { --fw: calc(96cqh * var(--seite, .36));   /* Figur: 96 % der Bühnenhöhe hoch, Breite = Höhe × Seitenverhältnis */
+  position: absolute; z-index: 2; left: calc(97% + 4px); bottom: 3%; width: clamp(44px, min(26cqh, 50cqw - var(--fw) * .45 - 10px), 108px);
+  aspect-ratio: 1; padding: 5px; border-radius: 50%; background: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.28); }
+@media (max-width: 359px), (max-height: 420px) { .plakette { padding: 4px; } }
 .mano { width: 100%; height: 100%; display: block; }
 .nadel { transition: transform 1.3s cubic-bezier(.25,.9,.3,1.08); }
 
@@ -113,16 +115,19 @@ button { font: inherit; }
 .grad[data-k="1"]::before { --g2: #fff; }
 .grad[data-k="2"]::before { --g2: #fff; --g3: #fff; }
 
-/* Pfeile: runde weiße Knöpfe, an den Enden blass (kein Kreis) */
-.pfeil { position: absolute; z-index: 4; top: 45%; width: 44px; height: 44px; margin-top: -22px; padding: 0; border: 0; border-radius: 50%;
-  background: #fff; color: var(--haupt); cursor: pointer; display: grid; place-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,.22); transition: opacity .25s, transform .2s, box-shadow .2s; }
+/* Pfeile: runde Knöpfe, an den Enden blass */
+/* Farben getauscht wie beim Ton-Knopf oben rechts (MZ, 27.10.2026): weißer Pfeil auf fast durchsichtigem Kreis mit dünnem
+   weißem Rand; am Ende der Reihe (aria-disabled) noch blasser. Darüberfahren/Antippen wie beim Ton-Knopf. */
+.pfeil { position: absolute; z-index: 4; top: 45%; width: 44px; height: 44px; margin-top: -22px; padding: 0; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.14); color: #fff; cursor: pointer; display: grid; place-items: center;
+  transition: background .2s, border-color .25s, color .25s, transform .2s; }
 .pfeil svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
 .pfeil.zurueck { left: 0; } .pfeil.vor { right: 0; }
-.pfeil:hover { transform: scale(1.06); box-shadow: 0 6px 16px rgba(0,0,0,.28); }
+.pfeil:hover { background: rgba(255,255,255,.22); }
 .pfeil:active { transform: scale(.94); }
 .pfeil:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-.pfeil[aria-disabled="true"] { opacity: .35; cursor: default; box-shadow: none; transform: none; }
+.pfeil[aria-disabled="true"], .pfeil[aria-disabled="true"]:hover { color: rgba(255,255,255,.35); border-color: rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06); cursor: default; transform: none; }
 
 .wahl-best-text { margin: 4px 0 0; font-size: 16px; font-weight: 500; text-align: center; }
 .wahl-best-text b { font-weight: 800; }

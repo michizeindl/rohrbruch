@@ -213,20 +213,27 @@
     let anfang = 0, bereit = false;
     function deckung() { const d = sg.getImageData(0, 0, N, N).data; let s = 0; for (let i = 3; i < d.length; i += 16) s += d[i]; return s; }
     // Schmutzschicht einmal aufbauen, sobald Bauteil und Bild geladen sind (u = Rückgabe von RB.zelle)
+    // Offline (QA Release 5): liegt ein Bild nicht im Zwischenspeicher, schlägt es fehl (complete, aber ohne Breite) – dann die
+    // nächste Fassung nehmen statt ewig zu warten (sonst ließ sich nicht wischen und der Einsatz hing fest)
+    const kaputt = adr => { const i = RB.bild(adr); return i.complete && !i.naturalWidth; };
+    const ERSATZ_BELAG = { kalk: '#d9d3c1', rost: '#8a4b25', staub: '#9b958b', schlamm: '#5b4a32' };
     function aufbauen(u) {
       const sm = u && RB.SCHMUTZ && RB.SCHMUTZ[u.blatt + '|' + u.nr];
       sg.clearRect(0, 0, N, N);
-      if (sm) {   // gestaltete Schmutz-Fassung, deckungsgleich
+      if (sm && !kaputt(sm[0])) {   // gestaltete Schmutz-Fassung, deckungsgleich
         const i = RB.bild(sm[0]);
         if (!RB.geladen(i)) return false;
         RB.zelle(sg, sm[0], sm[1], sm[2] || 3, sm[3] || 2, 0, 0, N, N, false);
       } else {
-        const m = RB.motiv('texturen', tex);
-        if (!m || (u && !RB.geladen(RB.bild(u.blatt)))) return false;
-        // Textur zweimal leicht versetzt/gedreht: deckt das ganze Bauteil, ohne als Kachel aufzufallen
-        [[0.5, 0.5, 1.25, 0.3], [0.38, 0.62, 0.9, -0.9]].forEach(([x, y, f, d]) => {
+        const m = RB.motiv('texturen', tex), tb = ((window.RB_SPRITES || {}).texturen || {}).bild;
+        if (!m && !(tb && kaputt(tb))) return false;   // Textur lädt noch
+        if (u && !RB.geladen(RB.bild(u.blatt))) return false;
+        // Textur zweimal leicht versetzt/gedreht: deckt das ganze Bauteil, ohne als Kachel aufzufallen; ohne Textur (offline,
+        // Blatt fehlt) eine schlichte Fläche in der Farbe des Belags
+        if (m) [[0.5, 0.5, 1.25, 0.3], [0.38, 0.62, 0.9, -0.9]].forEach(([x, y, f, d]) => {
           sg.save(); sg.translate(N * x, N * y); sg.rotate(d); sg.drawImage(m.i, m.r[0], m.r[1], m.r[2], m.r[3], -N * f / 2, -N * f / 2, N * f, N * f); sg.restore();
         });
+        else { sg.globalAlpha = 0.8; sg.fillStyle = ERSATZ_BELAG[tex] || ERSATZ_BELAG.schlamm; sg.fillRect(0, 0, N, N); sg.globalAlpha = 1; }
         sg.globalCompositeOperation = 'destination-in';
         if (u) RB.zelle(sg, u.blatt, u.nr, u.spalten, u.zeilen, 0, 0, N, N, false);   // nur auf dem Bauteil
         else { const v = sg.createRadialGradient(N / 2, N / 2, N * 0.2, N / 2, N / 2, N * 0.5); v.addColorStop(0, '#000'); v.addColorStop(1, 'rgba(0,0,0,0)'); sg.fillStyle = v; sg.fillRect(0, 0, N, N); }
@@ -752,7 +759,7 @@
       const b = knopf(s);
       b.addEventListener('click', () => {
         if (i === n) {
-          b.disabled = true; b.classList.add('erledigt'); liste.append(el('li', '', s)); n++;
+          b.disabled = true; b.classList.add('erledigt'); liste.append(el('li', '', s)); liste.scrollTop = liste.scrollHeight; n++;
           const [kl, ko] = schrittKlang(s); ton(kl, ko);
           if (n === schritte.length) { ton('gut', { verzoegerung: 0.35 }); const g = fehler === 0 ? 'genau' : fehler === 1 ? 'ungenau' : 'anlauf2'; o.meldung(guteText(g), 'gut'); fertig(g); }
           else o.meldung('Gut. Was kommt als Nächstes?', 'info');

@@ -211,9 +211,12 @@
   // Spielertest 25.10.2026: Aufschlüsselung über alle 3 Einsätze (Ursache – Werkzeug – Reparatur – Tempo) und eine Zeile mit den
   // fünf Bewertungsstufen; beides unter Bewertung und Zeit (quer: linke Spalte, hochkant: vor der Einsatz-Liste)
   const teile = el('div', 'rb-endteile'), stufenZeile = el('p', 'rb-endstufen');
+  // Chef-Tipp (MZ, 27.10.2026): nicht als fünfte Kachel, sondern als eigene schmale Zeile unter den vier Kacheln („Chef-Tipp −30“)
+  const tippZeile = el('p', 'rb-endtipp'); tippZeile.hidden = true;
+  const ROLLE = String((K.meister && K.meister.rolle) || 'Chef').trim() || 'Chef';   // wie spiel.js (Chef/Chefin aus kunde.js)
   // Bewertung und Zeit-Plakette in einer Zeile (bricht auf schmalen Handys um) – spart Höhe
   const bewZeile = el('div', 'rb-endbewertung'); bewZeile.append(ue, zeit);
-  links.append(manoBox, bewZeile, teile, stufenZeile);
+  links.append(manoBox, bewZeile, teile, tippZeile, stufenZeile);
   // Punkte-Bild (MZ, 25.10.2026): nur noch ein Knopf „Weiter“ – er führt zum Abschlussbild (Figur, Sprechblase, Ausbildung bzw.
   // Praktikum, „Nochmal spielen“/„Zum Menü“). Der Bestwert wird wie bisher beim Erreichen des Punkte-Bilds gespeichert (Rahmen).
   const weiterKnopf = el('button', 'knopf rb-endweiter', 'Weiter'); weiterKnopf.type = 'button';
@@ -392,10 +395,12 @@
         if (w < max[k] * 0.6) t.classList.add('schwach');
         teile.append(t);
       });
-      const tipp = summe('tipp');
-      if (tipp) { const t = el('div', 'rb-endteil tipp'); t.style.animationDelay = '1.82s'; t.append(el('span', '', 'Tipp'), el('b', '', '−' + Math.abs(tipp))); teile.append(t); }
     }
     teile.hidden = !teile.children.length;
+    const tipp = erg.length && erg.every(e => e.ursache != null) ? summe('tipp') : 0;
+    tippZeile.textContent = '';
+    if (tipp) tippZeile.append(el('span', '', ROLLE + '-Tipp'), el('b', '', '−' + Math.abs(tipp)));
+    tippZeile.hidden = !tipp; links.classList.toggle('mittipp', !!tipp);
     // fünf Bewertungsstufen in einer Zeile, die erreichte hervorgehoben
     stufenZeile.textContent = '';
     (info.stufen || []).forEach(([grenze, name], i) => {

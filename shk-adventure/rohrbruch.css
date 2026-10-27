@@ -2,13 +2,16 @@
    Start-/Endbild „Heizungs-Display“. Wird nach rahmen.css geladen; rahmen.css bleibt unverändert. */
 
 /* Hausschrift der Musterfirma: Barlow (SIL OFL), Schriftdateien auf Sammlungsebene ../schrift/barlow.css (Phase 4).
-   Für Überschriften, Knöpfe und Display-Texte; Fließtexte bleiben in der Systemschrift. */
+   Barlow überall (MZ, 27.10.2026): alle sichtbaren Texte – Leiste, Kopfzeile, Sprechblasen, Notizen, Endbild, Abschlussbild,
+   Einsatzbuch, Knöpfe, Manometer-Zahl. Ausnahmen: Geräte-Displays im Raum/in der Lupe (RB.lcd, Punktschrift im Startbild). */
 :root {
   --schrift-kopf: 'Barlow', 'Bahnschrift', 'Segoe UI', system-ui, sans-serif;
   --text: #1b2430; --leise: #5b6673; --flaeche: #ffffff; --wand: #e4e0d8;
   --gut: #2e7d32; --falsch: #c0392b;
 }
 html.stil-rohrbruch, html.stil-rohrbruch body { background: var(--wand); }
+body { font-family: var(--schrift-kopf); }
+button, input, select, textarea { font-family: inherit; }   /* Knöpfe erben sonst die Systemschrift des Browsers */
 #anzeige { z-index: 30; color: #fff; }
 .schirm { z-index: 40; }
 #rb { z-index: 10; }
@@ -48,7 +51,7 @@ html.stil-rohrbruch, html.stil-rohrbruch body { background: var(--wand); }
 .rb-marke.erledigt::after { opacity: .5; }
 .rb-marke.stelle.erledigt::before, .rb-marke.gruppe.erledigt::before { content: "✓"; position: absolute; right: -9px; top: -9px; z-index: 2;
   width: 52%; min-width: 17px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: var(--gut); color: #fff;
-  border: 2px solid #fff; font: 900 max(10px, calc(var(--raum) * .026)) / 1 system-ui, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,.45);
+  border: 2px solid #fff; font: 900 max(10px, calc(var(--raum) * .026)) / 1 var(--schrift-kopf); box-shadow: 0 1px 3px rgba(0,0,0,.45);
   animation: rbHaken .35s ease-out both; }
 .rb-marke.versteck.gruppe.erledigt::before { content: none; }
 @keyframes rbHaken { from { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.15); } }
@@ -322,7 +325,7 @@ html.rb-ruhig .hg-knopf.bereit { animation: none; box-shadow: 0 0 0 3px color-mi
 .hg-teilschritte li.offen { color: var(--leise); font-weight: 500; }
 .hg-teilschritte li.offen::before { content: "○"; font-size: 10px; top: 2px; }
 .hg-lcd { flex: 1 1 auto; min-height: 120px; border-radius: 10px; padding: 8px 10px; background: #0d1418; color: #9fe8ff; overflow: auto;
-  font: 700 15px/1.25 ui-monospace, "Cascadia Mono", Consolas, monospace; box-shadow: inset 0 0 0 3px var(--haupt); }
+  font: 600 15.5px/1.25 var(--schrift-kopf); font-variant-numeric: tabular-nums; letter-spacing: .2px; box-shadow: inset 0 0 0 3px var(--haupt); }
 .hg-lcd .kopf { opacity: .7; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
 .hg-lcd .zeile { display: flex; justify-content: space-between; gap: 10px; padding: 5px 6px; border-radius: 4px; cursor: pointer; }
 .hg-lcd .zeile.aktiv { background: #9fe8ff; color: #0d1418; }
@@ -406,15 +409,17 @@ html.rb-ruhig .hg-knopf.bereit { animation: none; box-shadow: 0 0 0 3px color-mi
   background-image: radial-gradient(120% 70% at 15% 0%, rgba(255,255,255,.16), rgba(255,255,255,0) 60%),
                     radial-gradient(90% 60% at 100% 100%, rgba(0,0,0,.18), rgba(0,0,0,0) 70%); }
 .stil-rohrbruch #startSchirm.mitbild:not([hidden]) { background: #d9dcdf; }
-/* Hintergrundbild: steht fest hinter dem (ggf. scrollenden) Inhalt, ca. 3px weichgezeichnet; Rand 14px über den Bildschirm hinaus,
-   damit die weichen Kanten nicht zu sehen sind. Lage (object-position) rechnet schirme.js (hgLage). */
-.rb-starthg { position: fixed; inset: -14px; z-index: 0; overflow: hidden; pointer-events: none; filter: blur(3px); opacity: 0; transition: opacity .5s ease-out; }
+/* Hintergrundbild: steht fest hinter dem (ggf. scrollenden) Inhalt, leicht weichgezeichnet (MZ, 27.10.2026: weniger weich, die
+   Wärmepumpe soll erkennbar sein – 1,5px statt 3px); Rand 14px über den Bildschirm hinaus, damit die weichen Kanten nicht zu
+   sehen sind. Lage (object-position) rechnet schirme.js (hgLage). */
+.rb-starthg { position: fixed; inset: -14px; z-index: 0; overflow: hidden; pointer-events: none; filter: blur(1.5px); opacity: 0; transition: opacity .5s ease-out; }
 .rb-starthg.da { opacity: 1; }
 .rb-starthg img { display: block; width: 100%; height: 100%; object-fit: cover; }
 #startSchirm:not(.mitbild) .rb-starthg, #startSchirm:not(.mitbild) .rb-startschleier { display: none; }
-/* Schleier: heller Schleier ca. 35 %, oben ein weicher Verlauf in Kundenfarbe-dunkel, damit das weiße Logo lesbar bleibt */
+/* Schleier: heller Schleier ca. 22–26 % (MZ, 27.10.2026: leicht zurückgenommen, vorher 30–35 %), oben ein weicher Verlauf in
+   Kundenfarbe-dunkel, damit das weiße Logo lesbar bleibt */
 .rb-startschleier { position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: linear-gradient(color-mix(in srgb, var(--dunkel) 45%, transparent) 0, rgba(255,255,255,.3) max(20%, 96px), rgba(255,255,255,.35)); }
+  background: linear-gradient(color-mix(in srgb, var(--dunkel) 45%, transparent) 0, rgba(255,255,255,.22) max(20%, 96px), rgba(255,255,255,.26)); }
 .rb-startinhalt { position: relative; z-index: 1; width: min(440px, 100%); min-height: 100%; margin: 0 auto;
   padding: max(14px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 18px; }
@@ -497,13 +502,13 @@ html.rb-ruhig .hg-knopf.bereit { animation: none; box-shadow: 0 0 0 3px color-mi
 .rb-mano .rand { fill: #c5cad0; } .rb-mano .blatt { fill: #fbfbf8; stroke: #e1e3e5; }
 .rb-mano .band { fill: none; stroke: var(--haupt); stroke-width: 9; }
 .rb-mano .grob { stroke: #222; stroke-width: 1.8; } .rb-mano .fein { stroke: #555; stroke-width: .9; }
-.rb-mano text { font: 600 10.5px system-ui, sans-serif; fill: #333; text-anchor: middle; }
+.rb-mano text { font: 600 11px var(--schrift-kopf); fill: #333; text-anchor: middle; }
 .rb-mano .einheit { font-size: 9px; fill: #777; }
 .rb-mano .nadel { transform-origin: 100px 100px; }   /* Bewegung macht schirme.js (gemeinsam mit der Zahl) */
 .rb-mano .nadel path { fill: #c62828; } .rb-mano .nadel circle { fill: #333; }
 /* Zahl unter der Nabe, so klein und hoch, dass auch „1.000“ die Skalenzahlen 0 und 1.000 nicht überdeckt */
 #endSchirm .rb-manobox .wert { position: absolute; left: 50%; top: 55.5%; transform: translateX(-50%); margin: 0; padding: .4cqw 2.6cqw; border-radius: 7px;
-  background: #0d1418; color: #9fe8ff; font: 800 7.8cqw/1.12 ui-monospace, "Cascadia Mono", Consolas, monospace; white-space: nowrap;
+  background: #0d1418; color: #9fe8ff; font: 700 8.6cqw/1.12 var(--schrift-kopf); letter-spacing: .02em; white-space: nowrap;
   font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 2px var(--haupt); animation: rbDisplay .25s .1s steps(3) both; }
 #endSchirm .rb-manobox .wert small { display: none; }   /* „Punkte“ steht klein im Zifferblatt */
 #endSchirm .ueberschrift { position: static; transform: none; max-width: none; margin: 0; padding: 0; background: none; box-shadow: none; border-radius: 0;
@@ -689,7 +694,7 @@ html.rb-ruhig .rb-zwraum.schalter { animation: none; }
 .rb-buchbalken i { display: block; height: 100%; width: 0; background: var(--akzent); border-radius: 4px; transition: width 1.2s cubic-bezier(.3,.8,.3,1); }
 .rb-buchfilter { display: flex; gap: 6px; overflow-x: auto; width: min(1100px, 100%); margin: 0 auto; padding-bottom: 4px; flex: none; scrollbar-width: thin; }
 .rb-buchchip { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 6px 12px; border-radius: 12px; border: 0;
-  background: rgba(255,255,255,.14); color: #fff; font: 600 13px/1.25 system-ui, sans-serif; cursor: pointer; transition: background .2s, transform .15s; }
+  background: rgba(255,255,255,.14); color: #fff; font: 600 13.5px/1.25 var(--schrift-kopf); cursor: pointer; transition: background .2s, transform .15s; }
 .rb-buchchip small { font-weight: 500; opacity: .8; font-size: 11.5px; }
 .rb-buchchip:hover { background: rgba(255,255,255,.24); transform: translateY(-1px); }
 .rb-buchchip.aktiv { background: #fff; color: var(--dunkel); }
@@ -840,7 +845,7 @@ html.rb-ruhig .rb-stempel { animation: rbBlende .25s ease-out both; }
 .rb-buchfilterbox.mehr-links .rb-buchfilter { -webkit-mask-image: linear-gradient(90deg, transparent 6px, #000 56px); mask-image: linear-gradient(90deg, transparent 6px, #000 56px); }
 .rb-buchfilterbox.mehr-links.mehr-rechts .rb-buchfilter { -webkit-mask-image: linear-gradient(90deg, transparent 6px, #000 56px, #000 calc(100% - 56px), transparent calc(100% - 6px)); mask-image: linear-gradient(90deg, transparent 6px, #000 56px, #000 calc(100% - 56px), transparent calc(100% - 6px)); }
 .rb-buchpfeil { position: absolute; top: 50%; transform: translateY(calc(-50% - 2px)); width: 30px; height: 30px; border-radius: 50%; border: 0; padding: 0;
-  display: none; place-items: center; background: #fff; color: var(--dunkel); font: 800 20px/1 system-ui, sans-serif; cursor: pointer;
+  display: none; place-items: center; background: #fff; color: var(--dunkel); font: 800 20px/1 var(--schrift-kopf); cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,.4); }
 .rb-buchpfeil.links { left: 0; } .rb-buchpfeil.rechts { right: 0; }
 .rb-buchfilterbox.mehr-links .rb-buchpfeil.links, .rb-buchfilterbox.mehr-rechts .rb-buchpfeil.rechts { display: grid; }
@@ -855,7 +860,12 @@ html.rb-ruhig .rb-stempel { animation: rbBlende .25s ease-out both; }
 .rb-endteil b { font-family: var(--schrift-kopf); font-size: 19px; line-height: 1.1; color: var(--dunkel); }
 .rb-endteil small { font-size: 11px; color: var(--leise); }
 .rb-endteil.schwach b { color: var(--falsch); }
-.rb-endteil.tipp b { color: var(--falsch); }
+/* Chef-Tipp als eigene schmale Zeile unter den vier Kacheln (MZ, 27.10.2026; vorher fünfte Kachel – „WERKZ…/REPAR…“ gekürzt) */
+.rb-endtipp { display: flex; align-items: baseline; justify-content: center; gap: 8px; width: 100%; margin: -2px 0 0; padding: 3px 10px 4px;
+  border-radius: 9px; background: #f1f3f5; font-variant-numeric: tabular-nums; animation: rbEin .4s 1.82s ease-out both; }
+.rb-endtipp[hidden] { display: none; }
+.rb-endtipp span { font-size: 11px; font-weight: 700; letter-spacing: .3px; color: var(--leise); text-transform: uppercase; }
+.rb-endtipp b { font-family: var(--schrift-kopf); font-size: 16px; line-height: 1.1; color: var(--falsch); }
 .rb-endstufen { margin: 0; font-size: 11.5px; line-height: 1.4; color: var(--leise); text-align: center; animation: rbEin .4s 1.9s ease-out both; }
 .rb-endstufen[hidden] { display: none; }
 .rb-endstufen .jetzt { color: var(--haupt); font-weight: 800; }
@@ -882,6 +892,8 @@ html.rb-ruhig .rb-stempel { animation: rbBlende .25s ease-out both; }
   #endSchirm.quer .rb-endbewertung { grid-area: bew; flex-direction: column; align-items: flex-start; gap: 8px; }
   #endSchirm.quer .rb-endbewertung .ueberschrift { font-size: 24px; text-align: left; }
   #endSchirm.quer .rb-endteile { grid-area: teile; }
+  #endSchirm.quer .rb-endlinks.mittipp { grid-template-areas: "mano bew" "teile teile" "tipp tipp" "stufen stufen"; }   /* Zeile nur mit Tipp */
+  #endSchirm.quer .rb-endtipp { grid-area: tipp; margin-top: -4px; }
   #endSchirm.quer .rb-endstufen { grid-area: stufen; }
   /* QA Release 4: Beschriftung (URSACHE, WERKZEUG, REPARATUR) passt sich der Kachelbreite an statt „WERKZ…“ –
      schmale Kacheln (568×320, 640×360, 667×375) bis 9px ohne Sperrung, breite bleiben wie bisher (11px, .3px) */
@@ -925,6 +937,18 @@ html.rb-ruhig .rb-erklaerpop { animation: none; }
 .rb-nah.handgriff.breit .hg-knoepfe.wahl { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; align-self: start; }
 .rb-nah.handgriff.breit .hg-knoepfe.wahl .hg-knopf { font-size: 12.5px; padding: 6px 5px; line-height: 1.2; border-radius: 8px; }
 .rb-nah.handgriff.breit .hg-schritte { align-self: start; font-size: 12px; }
+/* QA Release 5 (S3): sehr flach und schmal quer (568×320, 667×375) passten bei Schrittfolgen die Knöpfe nicht ganz ins Fenster.
+   Dort laufen die Knöpfe über die ganze Breite (5 Spalten, bis 10 Schritte = 2 Reihen), die erledigten Schritte stehen links unter
+   den Bildern in einem eigenen Feld, das bei vielen Schritten mitscrollt (handgriffe.js schiebt den neuesten Schritt in Sicht) */
+@media (max-height: 400px) {
+  .rb-nah.handgriff.breit.eng:has(.hg-knoepfe.wahl) { grid-template-rows: auto auto auto minmax(18px, 1fr) auto;
+    grid-template-areas: "kopf kopf" "bild hinweis" "bild anweisung" "bild meldung" "knoepfe knoepfe"; row-gap: 5px; }
+  .rb-nah.handgriff.breit.eng .hg-knoepfe.wahl { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .rb-nah.handgriff.breit.eng .hg-knoepfe.wahl .hg-knopf { font-size: 12px; padding: 3px 4px; line-height: 1.1; min-height: 34px; }
+  .rb-nah.handgriff.breit.eng:has(.hg-knoepfe.wahl) .hg-schritte { grid-area: bild; align-self: end; height: 42%; contain: size;
+    overflow-y: auto; columns: auto; font-size: 11px; line-height: 1.25; }
+  .rb-nah.handgriff.breit.eng:has(.hg-schritte:not(:empty)) .hg-bild { align-self: start; height: 56%; }
+}
 /* Abfluss: nach einem Fehltipp kurz gesperrt (Nachtest 25.10.2026) */
 .hg-knopf.gesperrt { opacity: .55; transform: scale(.97); transition: opacity .1s; }
 
@@ -1064,7 +1088,10 @@ html.rb-ruhig .rb-erklaerpop { animation: none; }
 
 /* ---------- Verlierer-Logik (Developer B, MZ 25.10.2026): Fehler-Anzeige, Warnung, Ausscheiden ---------- */
 /* Fehler-Punkte in der Kopfzeile neben „Einsatz 1/3“: frei = Ring, verbraucht = gefüllt; beim letzten erlaubten pulsiert der freie */
-#anzeige .links:has(.rb-fehler:not([hidden])) { line-height: 1.15; }
+#anzeige .links:has(.rb-fehler:not([hidden])) { line-height: 1.15;
+  /* QA Release 5 (S3): Platz für die Punkte, wenn sie pulsieren bzw. beim neuen Fehler aufspringen (bis 1,7-fach) – der Block
+     ist innen 4px größer, die negativen Ränder heben das wieder auf, die Kopfzeile sieht also unverändert aus */
+  padding: 4px 0 4px 4px; margin: -4px 0 -4px -4px; }
 #anzeige .rb-fehler { display: flex; align-items: center; gap: 4px; margin-top: 3px; height: 10px; }
 #anzeige .rb-fehler[hidden] { display: none; }
 #anzeige .rb-fehler i { width: 9px; height: 9px; border-radius: 50%; border: 2px solid rgba(255,255,255,.85); box-sizing: border-box;
