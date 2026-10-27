@@ -1122,7 +1122,12 @@
   }
   // Leiste länger als sichtbar: unten sanft ausblenden als Hinweis zum Scrollen
   function leisteMehr() {
-    requestAnimationFrame(() => leisteEl.classList.toggle('mehr', leisteEl.scrollTop + leisteEl.clientHeight < leisteEl.scrollHeight - 4));
+    requestAnimationFrame(() => {
+      leisteEl.classList.toggle('mehr', leisteEl.scrollTop + leisteEl.clientHeight < leisteEl.scrollHeight - 4);
+      // nach oben gescrollt (z. B. Meldung in den sichtbaren Teil geholt): oben sanft ausblenden, damit der Kopf nicht
+      // angeschnitten wirkt (QA Release 4, 27.10.2026; CSS nur flach quer)
+      leisteEl.classList.toggle('oben', leisteEl.scrollTop > 2);
+    });
   }
   leisteEl.addEventListener('scroll', leisteMehr, { passive: true });
   // Überschrift der Notizen mit Stand (MZ, 25.10.2026): „Notizen 3/9“ = untersuchte / alle Stellen des Einsatzes (CSS: Großbuchstaben);
@@ -1157,12 +1162,28 @@
       wahl.append(wahlKnopf(k1, 'koffer', () => lager('koffer')), wahlKnopf(k2, 'transporter', () => lager('transporter')), wahlKnopf(k3, 'raum', raumSuchen));
       aktionen.append(wahl);
       if (E.herkunftHinweis && offen.length) {
-        const h = el('p', 'rb-hinweis', [...new Set(offen.map(b => D.rahmen.herkunft[b.herkunft]).filter(Boolean))].join(' '));
-        aktionen.append(h);
+        const h = el('p', 'rb-hinweis', herkunftSatz(offen));
+        if (h.textContent) aktionen.append(h);
       }
       if (ST().ganzeListe) aktionen.append(packstand());
     } else aufgabe.textContent = '';
     leisteMehr();
+  }
+  // Herkunfts-Hinweis unter den drei Knöpfen: fehlen nur Teile von einem Ort, der bisherige Satz (rahmen.herkunft.koffer usw.);
+  // fehlen Teile von mehreren Orten, ein Satz nach MZs Vorgabe (27.10.2026) in der Reihenfolge Koffer – Transporter – Raum.
+  // Rahmen-Schlüssel (Unterpunkte von „Herkunft“ im Rahmen-Entwurf, kleingeschrieben): „koffer und transporter“,
+  // „koffer und raum“, „transporter und raum“, „alle drei“ – fehlen sie, gilt der Ersatztext.
+  const HERKUNFT_MEHR = {
+    'koffer transporter': ['koffer und transporter', 'Schau im Werkzeugkoffer und im Transporter.'],
+    'koffer raum': ['koffer und raum', 'Schau im Werkzeugkoffer und im Raum.'],
+    'transporter raum': ['transporter und raum', 'Schau im Transporter und im Raum.'],
+    'koffer transporter raum': ['alle drei', 'Schau im Werkzeugkoffer, im Transporter und im Raum.'],
+  };
+  function herkunftSatz(offen) {
+    const H = (D.rahmen && D.rahmen.herkunft) || {};
+    const orte = ['koffer', 'transporter', 'raum'].filter(o => offen.some(b => b.herkunft === o));
+    if (orte.length > 1) { const [k, ersatz] = HERKUNFT_MEHR[orte.join(' ')]; return nb(H[k] || ersatz); }
+    return nb(orte.length ? H[orte[0]] || '' : '');
   }
   let notizBenutzt = new Set();   // Fachbegriffe, die in den Notizen dieses Einsatzes schon unterstrichen sind
   function notiz(s) {
@@ -1929,7 +1950,7 @@
     const titel = n.charAt(0).toUpperCase() + n.slice(1);
     if (!fund || fund.genommen) {
       ton('nichts');
-      box.append(el('p', '', T('versteckLeer', 'Hier liegt nichts.')), knopf('Weiter suchen', 'zweit', zu));
+      box.append(el('p', '', T('versteckLeer', 'Hier liegt nichts.')), knopf('Weitersuchen', 'zweit', zu));   // MZ 27.10.2026: ein Wort
       // Herkunfts-Hinweis (Geselle): erst nach 3 verschiedenen leeren Verstecken (oder einem Fehlgriff); Meister nie
       if (!E.leerBesucht) E.leerBesucht = [];
       if (!E.leerBesucht.includes(n)) E.leerBesucht.push(n);
@@ -1941,8 +1962,10 @@
     }
     ton('kramen');
     const frageText = stufe === 'azubi' ? T('fundFrageAzubi', 'Brauchst du das am meisten, um das Problem zu lösen?') : T('fundFragePacken', 'Kommt das mit?');
+    // Rückmeldung als Kasten (MZ, 27.10.2026, Fund-Fenster Variante 2): Fehler hellrot mit Zeichen ✕, sonst ruhig in Hausfarbe mit „i“
     const antwort = el('p', 'rb-fundantwort'), knoepfe = el('div', 'rb-fundknoepfe');
-    const weiter = () => { knoepfe.textContent = ''; knoepfe.append(knopf('Weiter suchen', 'zweit', zu)); fundEinpassen(); };
+    antwort.setAttribute('aria-live', 'polite');
+    const weiter = () => { knoepfe.textContent = ''; knoepfe.append(knopf('Weitersuchen', 'zweit', zu)); fundEinpassen(); };
     knoepfe.append(knopf('Ja', 'haupt', () => {
       if (fund.art === 'ablenker' && fund.witzig) {   // witziger Ablenker: eigene Reaktion, zählt als unnötig (−20)
         let raus = false;
@@ -1951,11 +1974,16 @@
         if (raus) { knoepfe.querySelectorAll('button').forEach(x => { x.disabled = true; }); ausscheiden(); }
         if (stufe === 'geselle') E.herkunftHinweis = true;   // Fehlgriff (Azubi hat ihn schon, Meister nie)
         leiste();
-        antwort.textContent = nb(fund.witzig); antwort.className = 'rb-fundantwort witzig';
+        antwort.textContent = nb(fund.witzig); antwort.className = 'rb-fundantwort falsch witzig';
         return weiter();
       }
+      // MZ (27.10.2026): Was im Kasten des Fund-Fensters steht, steht nicht zusätzlich in der Leiste – packen() setzt die
+      // Leisten-Meldung, bei Rückmeldung im Fenster wird der vorige Stand zurückgeholt. Nach dem Schließen wird der Satz nicht
+      // nachgetragen (wie schon beim witzigen Ablenker); nur „eingepackt“ steht in der Leiste, weil das Fenster dann zugeht.
+      const leisteVorher = [meldungEl.textContent, meldungEl.className.replace(/\bneu\b/, '').trim()];
       const r = packen(fund.name);
       if (r === 'gepackt') { fund.genommen = true; markenSetzen(); zu(); return; }
+      meldungEl.textContent = leisteVorher[0]; meldungEl.className = leisteVorher[1];
       antwort.textContent = nb(r === 'nebenbei' ? NICHT_WICHTIGSTE : unnoetigText(fund.name, true));
       antwort.className = 'rb-fundantwort ' + (r === 'nebenbei' ? 'info' : 'falsch');
       weiter();
@@ -1965,8 +1993,10 @@
       zu();
       meldung(T('bleibtLiegen', 'Bleibt liegen.'), '');
     }));
-    box.append(RB.werkzeugBild(fund.name, FUNDBILD), el('p', 'rb-fundname', T('gefunden', '{werkzeug} gefunden – {versteck}.', { werkzeug: fund.name, versteck: n })), el('p', 'rb-fundfrage', frageText), antwort, knoepfe);
-    nahZeigen('versteckfund', titel, [box], zg ? zu : undefined);
+    // Fund-Fenster Variante 2 „Gegenstand im Mittelpunkt“ (MZ, 27.10.2026): Überschrift = Gegenstand, graue Zeile „Fundort: …“
+    // über dem Bild, dann Frage + Ja/Nein. Die Fundsätze „gefunden“ aus dem Rahmen-Entwurf werden hier nicht mehr gezeigt.
+    box.append(el('p', 'rb-fundort', T('fundort', 'Fundort: {versteck}', { versteck: n })), RB.werkzeugBild(fund.name, FUNDBILD), el('p', 'rb-fundfrage', frageText), antwort, knoepfe);
+    nahZeigen('versteckfund mitfund', fund.name, [box], zg ? zu : undefined);
     markenSetzen();
   }
   // Fund-Fenster: passt der Inhalt nicht (flache Handys, lange witzige Reaktion), wird zuerst das Bild kleiner, dann

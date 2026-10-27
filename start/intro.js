@@ -3,7 +3,8 @@
    App-Icon mittig auf der Kundenfläche → Kachel löst sich auf → Firmenzeichen hebt sich aus dem gebrochenen o und schwebt
    an seine Stelle im Logo, der Logo-Schriftzug blendet ein (Logo am Ende vollständig und unverändert) → das gebrochene o
    fliegt an seinen Platz im Titel, schließt sich im Flug und ruckt beim Aufsetzen auseinander („Rohr gibt nach“) →
-   übrige Buchstaben, „!“ und die Linie erscheinen → Verteiler und Stufen-Kacheln gleiten nacheinander herein.
+   übrige Buchstaben, „!“ und die Linie erscheinen → die Stufenwahl erscheint wie gewohnt (bis 27.10.2026: Verteiler und
+   Stufen-Kacheln; Ablauf und Zeiten unverändert, MZ 27.10.2026).
    Weniger Bewegung (prefers-reduced-motion): Icon kurz still, dann sanfte Einblendung.
    Testhilfe: #intro (immer abspielen), #intro=1.4 (Standbild bei 1,4s).
    Passt sich an: Kundenfarbe (Fläche, Kachel), Firmenzeichen (aus dem eingebetteten Logo, Gruppe #zeichen). Hat ein
@@ -147,13 +148,13 @@
 
     // Seite: gestaffelt herein
     if (t >= Z.gesamt && !gezeigt.gesamt) { gezeigt.gesamt = true; S.zeigen(S.TITEL.slice(1), 0, 0); }
-    if (t >= Z.kacheln && !gezeigt.kacheln) { gezeigt.kacheln = true; S.zeigen([S.rohre, ...S.kacheln()], 0.12, 0); S.nadeln(500); }
+    if (t >= Z.kacheln && !gezeigt.kacheln) { gezeigt.kacheln = true; S.zeigen(S.kacheln(), 0.12, 0); S.nadeln(500); }
     if (t >= Z.unten && !gezeigt.unten) { gezeigt.unten = true; S.zeigen([S.KOPF[1], ...S.UNTEN], 0.08, 0); }
   }
 
   // Seite für reduzierte Bewegung bzw. Überspringen
   function endeSeite() {
-    const alle = [S.KOPF[1], S.TITEL[1], S.rohre, ...S.kacheln(), ...S.UNTEN].filter(el => el && !el.classList.contains('da'));
+    const alle = [S.KOPF[1], S.TITEL[1], ...S.kacheln(), ...S.UNTEN].filter(el => el && !el.classList.contains('da'));
     S.zeigen(alle, ruhig ? 0.04 : 0.05, 0);
     if (!gezeigt.kacheln || ruhig) S.nadeln(ruhig ? 0 : 300);
     gezeigt = { gesamt: true, kacheln: true, unten: true };
@@ -170,7 +171,6 @@
     buehne.style.transition = 'opacity .25s'; buehne.style.opacity = 0;
     setTimeout(() => buehne.remove(), 300);
     try { sessionStorage.setItem('mg:intro:rohrbruch:' + (K.firma || ''), '1'); } catch (e) { /* privat */ }
-    S.rohreZeichnen();
   }
   function schritt(jetzt) {
     if (!laeuft) return;

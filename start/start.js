@@ -1,5 +1,5 @@
-/* Startseite „Rohrbruch“ (Phase 4): Logo, Schriftzug, Stufen-Kacheln mit Manometer, Verteilerrohr, Einsatzbuch, Footer,
-   Musik der Sammlung. Das Intro (start/intro.js) nutzt window.RBStart. */
+/* Startseite „Rohrbruch“: Logo, Schriftzug, Stufenwahl „Figur im Lichtkreis“ (MZ, 27.10.2026; vorher Heizungsverteiler),
+   Einsatzbuch, Footer, Musik der Sammlung. Das Intro (start/intro.js) nutzt window.RBStart. */
 (function () {
   'use strict';
   const K = window.KUNDE || {}, F = K.farben || {}, firma = K.firma || '';
@@ -25,24 +25,26 @@
   titel.append(window.Schriftzug.svg());
 
   // ---------- Stufen ----------
-  // Startseite mit wenig Text (MZ, nach dem Release): je Stufe nur Name + Schwierigkeit + Bestwert;
-  // die langen Stufentexte stehen nur noch im Startbild des Spiels (rahmen.stufen in daten.js)
+  // Stufenwahl „Figur im Lichtkreis“ (MZ, 27.10.2026, Skizze B): immer nur eine Stufe sichtbar – Name, Grad-Pille links
+  // neben der Figur (MZ: B1), Figur der Stufe (neutral, wie im Zwischenbild des Spiels), Manometer-Plakette mit dem
+  // Bestwert, „An die Arbeit“. Pfeile, Wischen und Pfeiltasten blättern (nicht im Kreis). Die langen Stufentexte stehen
+  // nur im Startbild des Spiels (rahmen.stufen in daten.js).
   const STUFEN = [
     ['azubi', 'Azubi', 'Leicht'],
     ['geselle', 'Geselle', 'Mittel'],
     ['meister', 'Meister', 'Schwer'],
   ];
+  const STUFE_KEY = 'mg:stufe:rohrbruch:' + firma;   // derselbe Schlüssel wie im Spiel (spiel.js): zuletzt gespielte Stufe
+  const SF = window.ROHRBRUCH_STUFENFIGUREN || {};
   const zahl = n => n.toLocaleString('de-DE');
   const winkel = w => -135 + 270 * Math.max(0, Math.min(1000, w)) / 1000;
-  // gemeinsame Verläufe für Manometer und Rohre
+  const el = (tag, klasse, text) => { const e = document.createElement(tag); if (klasse) e.className = klasse; if (text != null) e.textContent = text; return e; };
+  // gemeinsame Verläufe für das Manometer
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   defs.setAttribute('aria-hidden', 'true'); defs.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
   defs.innerHTML = '<defs>' +
     '<linearGradient id="rb-chrom" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f7fa"/><stop offset=".45" stop-color="#aeb9c4"/><stop offset=".7" stop-color="#e3e9ef"/><stop offset="1" stop-color="#7d8a98"/></linearGradient>' +
     '<radialGradient id="rb-blatt" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#eef1f4"/></radialGradient>' +
-    '<linearGradient id="rb-rohr-v" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7c8997"/><stop offset=".32" stop-color="#eef3f7"/><stop offset=".55" stop-color="#cfd8e1"/><stop offset="1" stop-color="#66737f"/></linearGradient>' +
-    '<linearGradient id="rb-rohr-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c8997"/><stop offset=".32" stop-color="#eef3f7"/><stop offset=".55" stop-color="#cfd8e1"/><stop offset="1" stop-color="#66737f"/></linearGradient>' +
-    '<radialGradient id="rb-rad" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#ef5a4c"/><stop offset="1" stop-color="#a91f17"/></radialGradient>' +
     '</defs>';
   document.body.prepend(defs);
 
@@ -64,21 +66,141 @@
       '<ellipse cx="-8" cy="-22" rx="22" ry="10" fill="#fff" opacity=".35" transform="rotate(-20)"/></svg>';
   }
 
-  let summe = 0;
-  const box = $('stufen'), werte = [];
+  // Grünflächen (#00FF00) in die Kundenfarbe umfärben – gleiche Rechnung wie Rahmen.umfaerben (shk-adventure/rahmen.js,
+  // Quelle gemeinsam/rahmen.js); rahmen.js selbst baut beim Laden die Spielfläche auf und passt deshalb nicht auf die Startseite
+  function umfaerben(img, farbe) {
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const n = parseInt(String(farbe).replace('#', ''), 16) || 0, ziel = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    const bild = g.getImageData(0, 0, c.width, c.height), d = bild.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const gruen = d[i + 1] - Math.max(d[i], d[i + 2]);
+      if (gruen < 16) continue;
+      const t = Math.min(1, (gruen - 16) / 36);
+      const hell = Math.min(1.3, d[i + 1] / 210);
+      for (let k = 0; k < 3; k++) d[i + k] += (Math.min(255, ziel[k] * hell) - d[i + k]) * t;
+    }
+    g.putImageData(bild, 0, 0);
+    return c;
+  }
+
+  const buehne = $('buehne'), folienBox = $('folien'), namen = $('wahlName'), grade = $('gradStapel'), besten = $('wahlBest');
+  const los = $('losKnopf'), zurueck = $('pfeilZurueck'), vor = $('pfeilVor'), punkte = [...$('punkte').children], ansage = $('ansage');
+  const werte = [], folien = [], plaketten = [];
   STUFEN.forEach(([id, name, grad], i) => {
     const b = +lesen('mg:best:rohrbruch-' + id + ':' + firma) || 0;
-    summe += b; werte.push(b);
-    const a = document.createElement('a');
-    a.className = 'stufe ein'; a.href = 'shk-adventure/#stufe=' + id; a.dataset.k = i;
-    a.innerHTML = manometer() + '<span class="stufe-kopf"><b class="stufe-name"></b><span class="stufe-grad"></span>' +
-      '<span class="stufe-best">Dein Bestwert: <span class="wert"><b></b>/1.000 Punkte</span></span></span>';
-    a.querySelector('.stufe-name').textContent = name;
-    a.querySelector('.stufe-grad').textContent = grad;
-    a.querySelector('.stufe-best b').textContent = zahl(b);
-    a.setAttribute('aria-label', `${name} – ${grad} – Dein Bestwert: ${zahl(b)}/1.000 Punkte`);
-    box.append(a);
+    werte.push(b);
+    // Name (mittig über der Figur)
+    const h = el('h2', 'wahl-name-text', name); h.dataset.k = i; namen.append(h);
+    // Grad-Pille (links oben neben der Figur, MZ B1) – Lage zentral in start.css (.grad-stapel)
+    const p = el('span', 'grad', grad); p.dataset.k = i; grade.append(p);
+    // Figur mit Firmenzeichen auf der Brust und Manometer-Plakette
+    const folie = el('div', 'folie'); folie.dataset.k = i;
+    const f = SF[id] || {}, figur = el('div', 'figur');
+    if (f.w && f.h) figur.style.setProperty('--seite', f.w / f.h);
+    if (f.logo && (K.zeichenWeiss || K.logo)) {   // wie stufenBild im Spiel (spiel.js): Zeichen weiß auf der Brustfläche
+      const lg = el('img', 'westenlogo'); lg.alt = ''; lg.draggable = false; lg.src = K.zeichenWeiss || K.logo;
+      const [x, y, w, hh] = f.logo;
+      Object.assign(lg.style, { left: x * 100 + '%', top: y * 100 + '%', width: w * 100 + '%', height: hh * 100 + '%' });
+      figur.append(lg);
+    }
+    const plakette = el('div', 'plakette ein'); plakette.innerHTML = manometer();
+    figur.append(plakette); plaketten.push(plakette);
+    folie.append(figur); folienBox.append(folie);
+    folien.push({ id, name, grad, folie, figur, nadel: plakette.querySelector('.nadel'), bild: f.bild ? 'shk-adventure/' + f.bild : '' });
+    // Bestwert-Zeile
+    const z = el('p', 'wahl-best-text'); z.dataset.k = i;
+    z.append('Dein Bestwert: ', el('b', '', zahl(b)), '/1.000 Punkte');
+    besten.append(z);
   });
+
+  // Figuren laden und umfärben: zuerst die angezeigte, dann die übrigen (je ca. 35 KB)
+  function figurLaden(k) {
+    const F = folien[k];
+    if (!F || F.geladen || !F.bild) return Promise.resolve();
+    F.geladen = true;
+    return new Promise(fertig => {
+      const i = new Image();
+      i.onload = () => {
+        let bild = i;
+        try { bild = umfaerben(i, HAUPT); } catch (e) { /* file:// – Bild ohne Umfärben */ }
+        bild.className = 'figur-bild'; bild.setAttribute('aria-hidden', 'true'); if (bild === i) { i.alt = ''; i.draggable = false; }
+        F.figur.prepend(bild);
+        requestAnimationFrame(() => F.figur.classList.add('bereit'));
+        fertig();
+      };
+      i.onerror = () => fertig();
+      i.src = F.bild;
+    });
+  }
+
+  // ---------- Blättern ----------
+  const hashStufe = (/(?:^#|&)stufe=(\w+)/.exec(location.hash) || [])[1];   // Testhilfe #stufe=geselle
+  let aktiv = Math.max(0, STUFEN.findIndex(s => s[0] === (hashStufe || lesen(STUFE_KEY))));
+  let sichtbar = false;   // Nadeln drehen erst, wenn die Stufenwahl zu sehen ist (nach dem Intro)
+  const schreiben = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* privat */ } };
+  const wurzelIntro = () => document.documentElement.classList.contains('intro');
+  function nadelZu(k, verz) {
+    const n = folien[k].nadel, ziel = `rotate(${winkel(werte[k])}deg)`;
+    if (ruhig) { n.style.transform = ziel; return; }
+    n.style.transition = 'none'; n.style.transform = 'rotate(-135deg)';
+    void n.getBoundingClientRect();
+    n.style.transition = '';
+    setTimeout(() => { n.style.transform = ziel; }, verz || 0);
+  }
+  function anzeigen(ansagen) {
+    const F = folien[aktiv];
+    const lage = (c, k) => {
+      c.classList.toggle('aktiv', k === aktiv); c.classList.toggle('vorher', k < aktiv); c.classList.toggle('nachher', k > aktiv);
+    };
+    [namen, grade, besten].forEach(st => [...st.children].forEach(c => { const k = +c.dataset.k; lage(c, k); c.setAttribute('aria-hidden', k === aktiv ? 'false' : 'true'); }));
+    // Figur ist Schmuck – Name, Pille und Bestwert-Zeile tragen die Angaben
+    folien.forEach((G, k) => { lage(G.folie, k); G.folie.setAttribute('aria-hidden', 'true'); });
+    punkte.forEach((p, k) => p.classList.toggle('an', k === aktiv));
+    zurueck.setAttribute('aria-disabled', aktiv === 0 ? 'true' : 'false');
+    vor.setAttribute('aria-disabled', aktiv === STUFEN.length - 1 ? 'true' : 'false');
+    los.href = 'shk-adventure/#stufe=' + F.id;
+    los.setAttribute('aria-label', 'An die Arbeit – Stufe ' + F.name);
+    if (ansagen) ansage.textContent = `${F.name} – ${F.grad} – Dein Bestwert: ${zahl(werte[aktiv])}/1.000 Punkte`;
+    figurLaden(aktiv).then(() => folien.forEach((G, k) => figurLaden(k)));
+  }
+  function wechseln(r) {
+    const neu = aktiv + r;
+    if (neu < 0 || neu >= STUFEN.length) return;
+    aktiv = neu;
+    schreiben(STUFE_KEY, folien[aktiv].id);
+    anzeigen(true);
+    if (sichtbar) nadelZu(aktiv, 180);
+  }
+  function starten() { schreiben(STUFE_KEY, folien[aktiv].id); location.href = los.href; }
+  zurueck.addEventListener('click', () => wechseln(-1));
+  vor.addEventListener('click', () => wechseln(1));
+  los.addEventListener('click', () => schreiben(STUFE_KEY, folien[aktiv].id));
+  addEventListener('keydown', e => {
+    if (wurzelIntro() || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); wechseln(e.key === 'ArrowLeft' ? -1 : 1); }
+  });
+  // Wischen (Handy) und Ziehen mit der Maus; kurzes Antippen der Figur startet die Stufe
+  let wisch = null, gewischt = false;
+  buehne.addEventListener('pointerdown', e => {
+    if (!e.isPrimary || e.target.closest('.pfeil')) return;
+    wisch = { x: e.clientX, y: e.clientY };
+  });
+  buehne.addEventListener('pointerup', e => {
+    if (!wisch || !e.isPrimary) return;
+    const dx = e.clientX - wisch.x, dy = e.clientY - wisch.y;
+    wisch = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      gewischt = true; setTimeout(() => { gewischt = false; }, 350);
+      wechseln(dx < 0 ? 1 : -1);
+    }
+  });
+  buehne.addEventListener('pointercancel', () => { wisch = null; });
+  folienBox.addEventListener('click', e => { if (!gewischt && e.target.closest('.folie.aktiv .figur')) starten(); });
+  anzeigen(false);
+
   let buch = [];
   try { buch = JSON.parse(lesen('mg:buch:rohrbruch:' + firma) || '[]'); } catch (e) { /* leer */ }
   $('buch').textContent = Array.isArray(buch) ? buch.length : 0;
@@ -95,86 +217,24 @@
   fuss.append(document.createElement('br'));
   (K.rechtliches || []).forEach((r, i) => { if (i) fuss.append(' – '); const u = document.createElement('u'); u.textContent = r.text; fuss.append(u); });
 
-  // ---------- Verteilerrohr mit drei Heizkreisen (im Code gezeichnet, folgt dem Layout) ----------
-  const vt = $('verteiler'), rohre = $('rohre');
-  function rohreZeichnen() {
-    const C = vt.getBoundingClientRect(), W = C.width, H = C.height;
-    if (!W || !H) return;
-    // Lage ohne die Erscheinen-Bewegung messen (offsetLeft/-Top ignorieren transform)
-    const bx = box.offsetLeft, by = box.offsetTop;
-    const kacheln = [...box.children].map(a => {
-      const r = a.getBoundingClientRect(), m = a.querySelector('.mano').getBoundingClientRect();
-      const l = bx + a.offsetLeft, t = by + a.offsetTop, k = a.offsetWidth / (r.width || 1);
-      return { l, t, r: l + a.offsetWidth, b: t + a.offsetHeight,
-        mx: l + (m.left + m.width / 2 - r.left) * k, my: t + (m.top + m.height / 2 - r.top) * k };
-    });
-    const neben = kacheln[1].t < kacheln[0].b - 4;   // Kacheln nebeneinander → Verteiler waagrecht oben
-    const D = neben ? 18 : 14, d = neben ? 11 : 9;   // Rohrstärken: Verteiler, Heizkreis
-    let s = '';
-    const rohr = (x0, y0, x1, y1, st) => {
-      const senk = Math.abs(x1 - x0) < Math.abs(y1 - y0);
-      const x = Math.min(x0, x1) - (senk ? st / 2 : 0), y = Math.min(y0, y1) - (senk ? 0 : st / 2);
-      const w = senk ? st : Math.abs(x1 - x0), h = senk ? Math.abs(y1 - y0) : st;
-      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="url(#rb-rohr-${senk ? 'v' : 'h'})"/>`;
-    };
-    const muffe = (x, y, senk, st) => {   // Verbindungsstück: etwas dicker als das Rohr
-      const L = st * 0.9, B = st + 6;
-      return senk ? `<rect x="${(x - B / 2).toFixed(1)}" y="${(y - L / 2).toFixed(1)}" width="${B}" height="${L.toFixed(1)}" rx="2" fill="url(#rb-rohr-v)"/>`
-        : `<rect x="${(x - L / 2).toFixed(1)}" y="${(y - B / 2).toFixed(1)}" width="${L.toFixed(1)}" height="${B}" rx="2" fill="url(#rb-rohr-h)"/>`;
-    };
-    const ventil = (x, y, k) => {   // Handrad von vorn: rotes Rad mit Griffmulden, dreht sich beim Darüberfahren
-      const R = neben ? 11 : 9;
-      let mulden = '';
-      for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; mulden += `<circle cx="${(x + Math.cos(a) * R * 0.93).toFixed(1)}" cy="${(y + Math.sin(a) * R * 0.93).toFixed(1)}" r="${(R * 0.2).toFixed(1)}" fill="#8c1a13"/>`; }
-      return `<circle cx="${x}" cy="${y}" r="${R + 3}" fill="rgba(0,0,0,.18)"/><g class="ventil" data-k="${k}"><circle cx="${x}" cy="${y}" r="${R}" fill="url(#rb-rad)"/>${mulden}` +
-        `<rect x="${(x - R * 0.12).toFixed(1)}" y="${(y - R * 0.75).toFixed(1)}" width="${(R * 0.24).toFixed(1)}" height="${(R * 1.5).toFixed(1)}" rx="1" fill="#fff" opacity=".85"/>` +
-        `<circle cx="${x}" cy="${y}" r="${(R * 0.32).toFixed(1)}" fill="url(#rb-chrom)"/></g>`;
-    };
-    let fluss = '';
-    if (neben) {
-      const y = 18, x0 = kacheln[0].mx - 46, x1 = kacheln[2].mx + 46;
-      kacheln.forEach(k => { s += rohr(k.mx, y, k.mx, k.t + 10, d); s += muffe(k.mx, k.t - 4, true, d); });
-      s += rohr(x0, y, x1, y, D);
-      s += `<rect x="${x0 - 7}" y="${y - D / 2 - 3}" width="9" height="${D + 6}" rx="3" fill="url(#rb-rohr-h)"/><rect x="${x1 - 2}" y="${y - D / 2 - 3}" width="9" height="${D + 6}" rx="3" fill="url(#rb-rohr-h)"/>`;
-      kacheln.forEach((k, i) => { s += ventil(k.mx, y, i); fluss += `<path class="fluss" data-k="${i}" d="M${x0} ${y} H${k.mx} V${k.t + 6}"/>`; });
-    } else {
-      const x = Math.max(10, kacheln[0].l / 2 - 1), y0 = kacheln[0].my - 30, y1 = kacheln[2].my + 30;
-      kacheln.forEach(k => { s += rohr(x, k.my, k.l + 10, k.my, d); s += muffe(k.l - 4, k.my, false, d); });
-      s += rohr(x, y0, x, y1, D);
-      s += `<rect x="${x - D / 2 - 3}" y="${y0 - 7}" width="${D + 6}" height="9" rx="3" fill="url(#rb-rohr-v)"/><rect x="${x - D / 2 - 3}" y="${y1 - 2}" width="${D + 6}" height="9" rx="3" fill="url(#rb-rohr-v)"/>`;
-      kacheln.forEach((k, i) => { s += ventil(x, k.my, i); fluss += `<path class="fluss" data-k="${i}" d="M${x} ${y0} V${k.my} H${k.l + 6}"/>`; });
-    }
-    rohre.setAttribute('viewBox', `0 0 ${W.toFixed(1)} ${H.toFixed(1)}`);
-    rohre.innerHTML = s +
-      `<g fill="none" stroke="#e0412f" stroke-width="${neben ? 4 : 3.5}" stroke-linecap="round">${fluss}</g>`;   // warmes Wasser im Vorlauf
-  }
-  // Kacheln verschieben sich beim Erscheinen (transform) – gemessen wird trotzdem richtig, weil die Animation erst danach läuft;
-  // zur Sicherheit nach dem Erscheinen und bei jeder Größenänderung neu zeichnen
-  const neu = () => requestAnimationFrame(rohreZeichnen);
-  if (window.ResizeObserver) new ResizeObserver(neu).observe(vt); else addEventListener('resize', neu);
-  document.fonts && document.fonts.ready.then(neu);
-  box.addEventListener('animationend', neu);
-
-  // Heizkreis „aufdrehen“, solange eine Kachel berührt/überfahren wird
-  box.addEventListener('pointerover', e => { const a = e.target.closest('a.stufe'); if (a) vt.dataset.aktiv = a.dataset.k; });
-  box.addEventListener('pointerout', e => { const a = e.target.closest('a.stufe'); if (a && !a.contains(e.relatedTarget)) delete vt.dataset.aktiv; });
-  box.addEventListener('focusin', e => { const a = e.target.closest('a.stufe'); if (a) vt.dataset.aktiv = a.dataset.k; });
-  box.addEventListener('focusout', () => { delete vt.dataset.aktiv; });
-
   // ---------- Erscheinen (gestaffelt) ----------
   function nadeln(start) {
-    [...box.children].forEach((a, i) => {
-      const n = a.querySelector('.nadel');
-      setTimeout(() => { n.style.transform = `rotate(${winkel(werte[i])}deg)`; }, ruhig ? 0 : start + i * 140);
-    });
+    sichtbar = true;
+    nadelZu(aktiv, ruhig ? 0 : start);
+    folien.forEach((G, k) => { if (k !== aktiv) G.nadel.style.transform = `rotate(${winkel(werte[k])}deg)`; });
   }
   function zeigen(teile, abstand, start) {   // teile: Elemente, die nacheinander erscheinen
     teile.forEach((el, i) => { el.style.setProperty('--v', ((start || 0) + i * (abstand || 0.08)).toFixed(2) + 's'); el.classList.add('da'); });
   }
   const KOPF = [logoBox, $('tonKnopf')], TITEL = [titel];   // Gesamt-Bestwert entfällt (MZ, 25.10.2026)
-  const UNTEN = [$('buchKnopf'), fuss];
+  // Stufenwahl (ersetzt die Kacheln, auch fürs Intro): Name, Bühne (Figur, Pille, Pfeile), Plakette der angezeigten Stufe;
+  // die Plaketten der übrigen Stufen liegen unsichtbar dahinter und erscheinen gleich mit
+  const kacheln = () => [namen, buehne, plaketten[aktiv], ...plaketten.filter((p, k) => k !== aktiv)];
+  const UNTEN = [besten, los, $('punkte'), $('buchKnopf'), fuss];
   function allesZeigen() {
-    zeigen([...KOPF, ...TITEL, rohre, ...box.children, ...UNTEN], 0.07);
+    const k = kacheln();
+    zeigen([...KOPF, ...TITEL, ...k.slice(0, 3), ...UNTEN], 0.07);
+    zeigen(k.slice(3), 0, 0.3);
     nadeln(650);
   }
 
@@ -233,10 +293,10 @@
     symbol();
     if (tonAn) an(); else aus();
   });
-  // Seite verlassen (Kachel antippen): Musik sanft ausblenden; zurück aus dem Verlauf: wieder an
+  // Seite verlassen (Stufe starten): Musik sanft ausblenden
   addEventListener('pagehide', aus);
-  addEventListener('pageshow', e => { if (e.persisted) { neu(); } });
 
-  window.RBStart = { logoBereit, zeigen, allesZeigen, nadeln, rohreZeichnen, KOPF, TITEL, UNTEN, kacheln: () => [...box.children], rohre, titel, logoBox, ruhig };
+  window.RBStart = { logoBereit, zeigen, allesZeigen, nadeln, KOPF, TITEL, UNTEN, kacheln, titel, logoBox, ruhig, wechseln,
+    get stufe() { return folien[aktiv].id; } };
   if (!document.documentElement.classList.contains('intro')) allesZeigen();
 })();

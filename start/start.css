@@ -1,7 +1,8 @@
-/* Startseite „Rohrbruch“ – Layout 3 „Heizungsverteiler“ (MZ, 24.10.2026). Fläche in Kundenfarbe, Logo weiß oben links,
-   Schriftzug weiß, Verteilerrohr mit drei Heizkreisen zu den Stufen-Kacheln, Einsatzbuch, Footer.
-   Hoch: Verteiler senkrecht links, Kacheln untereinander – breit: Verteiler waagrecht oben, Kacheln nebeneinander –
-   quer und flach: zwei Spalten (links Kopf/Titel/Einsatzbuch/Footer, rechts Verteiler). */
+/* Startseite „Rohrbruch“ – Stufenwahl „Figur im Lichtkreis“ (MZ, 27.10.2026, Skizze B; vorher Heizungsverteiler, archiviert in
+   Material/Archiv/startseite-verteiler-2026-10-27/). Fläche in Kundenfarbe, Logo weiß oben links, Schriftzug weiß, darunter
+   immer EINE Stufe: Name, Figur im Lichtkreis mit Grad-Pille links oben (MZ: B1) und Manometer-Plakette, Bestwert,
+   „An die Arbeit“, Positionspunkte; Pfeile links/rechts. Einsatzbuch, Footer.
+   Hoch und breit: eine Spalte – quer und flach: zwei Spalten (links Kopf/Titel/Einsatzbuch/Footer, rechts Stufenwahl). */
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body {
@@ -15,22 +16,20 @@ body::before {   /* weiches Licht von oben links, damit die Fläche nicht platt 
               radial-gradient(90% 60% at 100% 100%, rgba(0,0,0,.18), rgba(0,0,0,0) 70%);
 }
 button { font: inherit; }
+.nur-vorlesen { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 .seite {
   position: relative; z-index: 1; min-height: 100vh; min-height: 100svh;
   width: min(560px, 100%); margin: 0 auto;
   padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-  /* Inhalt in der Höhe mittig (automatische Ränder teilen übrigen Platz), Footer unten – auf hohen Bildschirmen luftig */
   display: flex; flex-direction: column;
 }
-.titel { margin-top: auto; padding-top: clamp(14px, 5vh, 48px); }   /* ohne Gesamt-Bestwert: Schriftzug etwas tiefer, mehr Luft zum Logo */
-.verteiler { margin-top: clamp(22px, 4vh, 38px); }   /* klar getrennt von den Kacheln */
-/* freier Platz: ein Drittel über dem Schriftzug, zwei Drittel über dem Footer – der Schriftzug sitzt so höher (MZ, 25.10.2026) */
-.buch { margin-top: 14px; margin-bottom: auto; }
+.titel { padding-top: clamp(10px, 3.5vh, 40px); }
+.buch { margin-top: clamp(14px, 2.5vh, 24px); }
 .fuss { margin-top: auto; padding-top: 14px; }
 .kopf { grid-area: kopf; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
 .titel { grid-area: titel; text-align: center; }
-.verteiler { grid-area: verteiler; }
+.wahl { grid-area: wahl; }
 .buch { grid-area: buch; }
 .fuss { grid-area: fuss; }
 
@@ -45,6 +44,7 @@ button { font: inherit; }
 }
 .ton:hover { background: rgba(255,255,255,.22); }
 .ton:active { transform: scale(.94); }
+.ton:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }   /* wie Pfeile/Knöpfe (QA Release 4) */
 .ton svg { width: 22px; height: 22px; fill: currentColor; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
 .ton svg path:first-child { stroke: none; }
 .ton svg path + path { fill: none; }
@@ -53,49 +53,90 @@ button { font: inherit; }
 .schriftzug svg { width: 100%; height: auto; display: block; overflow: visible; }
 .schriftzug .sz-ausruf, .schriftzug .sz-R, .schriftzug .sz-rest > g, .schriftzug .sz-linie { transform-box: fill-box; transform-origin: 50% 100%; }
 
-/* ---------- Verteiler ---------- */
-.verteiler { position: relative; padding-left: 30px; }
-.rohre { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0;
-  filter: drop-shadow(1px 3px 2px rgba(0,0,0,.28)); }
-.stufen { position: relative; z-index: 1; display: grid; gap: 12px; }
-/* Kachel mit wenig Text (MZ, nach dem Release): Manometer, Name, Schwierigkeit, Bestwert – kein Stufentext mehr */
-a.stufe {
-  position: relative; display: grid; grid-template-columns: 78px 1fr; grid-template-areas: "mano kopf";
-  column-gap: 16px; align-items: center;
-  padding: 14px 18px 14px 14px; border-radius: 16px; background: #fff; color: #1b2430; text-decoration: none;
-  box-shadow: 0 6px 18px rgba(0,0,0,.22), 0 1px 0 rgba(255,255,255,.6) inset;
-  transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s;
+/* ---------- Stufenwahl ---------- */
+/* Die Bühne wächst mit dem freien Platz (Zeile minmax(…, 1fr)), die ganze Wahl höchstens 680 px hoch */
+.wahl {
+  flex: 1 1 auto; max-height: 680px; width: 100%; margin-top: clamp(8px, 2vh, 22px);
+  display: grid; grid-template-columns: 100%; grid-template-rows: auto minmax(190px, 1fr) auto auto auto;
+  justify-items: center; align-content: center;
 }
-a.stufe:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,.28); }
-a.stufe:active { transform: scale(.98); }
-a.stufe:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-.mano { grid-area: mano; width: 78px; height: 78px; display: block; }
-.stufe-kopf { grid-area: kopf; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
-.stufe-name { display: block; font-size: 27px; font-weight: 800; line-height: 1.02; color: var(--haupt); letter-spacing: .2px; }
-/* Schwierigkeit: kleines Schild mit drei Strichen (wie eine Stufenanzeige), Text „Leicht/Mittel/Schwer“ */
-.stufe-grad { display: inline-flex; align-items: center; gap: 7px; margin-top: 5px; font-size: 15px; font-weight: 700; color: var(--dunkel, #0f2f57);
-  letter-spacing: .3px; }
-.stufe-grad::before { content: ""; width: 20px; height: 13px; flex: none;
-  background: linear-gradient(var(--haupt), var(--haupt)) 0 100% / 5px 40% no-repeat,
-              linear-gradient(var(--g2, #d3d9e0), var(--g2, #d3d9e0)) 7.5px 100% / 5px 70% no-repeat,
-              linear-gradient(var(--g3, #d3d9e0), var(--g3, #d3d9e0)) 15px 100% / 5px 100% no-repeat;
+/* Stapel: alle drei Stufen liegen übereinander, nur die angezeigte ist sichtbar (sanfter Wechsel) */
+.stapel { display: grid; justify-items: center; align-items: center; }
+.stapel > * { grid-area: 1 / 1; transition: opacity .35s ease, transform .45s cubic-bezier(.2,.8,.2,1); }
+.stapel > :not(.aktiv), .folie:not(.aktiv) { opacity: 0; pointer-events: none; }
+.stapel > .vorher { transform: translateX(-14px); }
+.stapel > .nachher { transform: translateX(14px); }
+
+.wahl-name-text { margin: 0; font-size: 34px; font-weight: 800; line-height: 1.05; letter-spacing: .2px; color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,.18); }
+
+/* Bühne höchstens 400 px breit (breit 480): Pille und Pfeile bleiben nah an der Figur */
+.buehne { position: relative; width: min(100%, 400px); height: 100%; justify-self: center; margin: 6px 0 2px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.folien { position: absolute; inset: 0; overflow-x: clip; }   /* hinausgleitende Figuren erzeugen keinen Querbalken */
+/* weicher heller Lichtkreis hinter der Figur – bleibt stehen, nur die Figur wechselt. Kräftiger wie in Skizze B
+   „Figur im Lichtkreis“ (MZ, 27.10.2026; Verlauf aus skizzen/startseite-karussell.html .licht übernommen) */
+.folien::before { content: ""; position: absolute; left: 50%; top: 46%; height: 98%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,255,255,.55) 45%, rgba(255,255,255,0) 70%); pointer-events: none; }
+.folie { position: absolute; inset: 0; transition: opacity .35s ease, transform .5s cubic-bezier(.2,.8,.2,1); }
+.folie.vorher { transform: translateX(-22%); }
+.folie.nachher { transform: translateX(22%); }
+.figur { position: absolute; left: 50%; bottom: 2%; height: 96%; aspect-ratio: var(--seite, .36); transform: translateX(-50%); cursor: pointer; }
+.figur::after { content: ""; position: absolute; left: 50%; bottom: -1.5%; width: 120%; height: 5%; transform: translateX(-50%); z-index: -1;
+  border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.35), rgba(0,0,0,0) 70%); }
+.figur-bild { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; object-position: bottom;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.28)); opacity: 0; transition: opacity .3s ease, transform .25s ease; }
+.figur.bereit .figur-bild { opacity: 1; }
+.folie.aktiv .figur:hover .figur-bild { transform: translateY(-3px); }
+.westenlogo { position: absolute; z-index: 1; object-fit: contain; pointer-events: none; transform: scale(.82); opacity: 0; transition: opacity .3s ease; }
+.figur.bereit .westenlogo { opacity: 1; }
+/* Manometer-Plakette rechts unten an der Figur */
+.plakette { position: absolute; z-index: 2; left: 58%; bottom: 3%; height: 29%; min-height: 60px; max-height: 128px; aspect-ratio: 1; padding: 5px;
+  border-radius: 50%; background: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.28); }
+/* kleinstes Handy (bis 359 px breit) und sehr niedrige Fenster (bis 420 px hoch, z. B. 568×320 quer): dort greift sonst die
+   Mindestgröße 60 px und die Plakette deckt die Beine – kleiner und weiter nach außen (MZ, 27.10.2026). Größere Formate unverändert. */
+@media (max-width: 359px), (max-height: 420px) {
+  .plakette { left: 86%; height: 24%; min-height: 44px; padding: 4px; }
 }
-a.stufe[data-k="1"] .stufe-grad::before { --g2: var(--haupt); }
-a.stufe[data-k="2"] .stufe-grad::before { --g2: var(--haupt); --g3: var(--haupt); }
-.stufe-best { display: block; margin-top: 6px; font-size: 15px; font-weight: 500; color: #5b6673; }
-.stufe-best b { color: #1b2430; font-weight: 700; }
-.stufe-best .wert { white-space: nowrap; }
+.mano { width: 100%; height: 100%; display: block; }
 .nadel { transition: transform 1.3s cubic-bezier(.25,.9,.3,1.08); }
 
-/* Strömung im Heizkreis beim Darüberfahren/Antippen */
-.fluss { stroke-dasharray: 10 22; opacity: 0; transition: opacity .3s; }
-.verteiler[data-aktiv] .fluss[data-k] { opacity: 0; }
-.verteiler[data-aktiv="0"] .fluss[data-k="0"], .verteiler[data-aktiv="1"] .fluss[data-k="1"], .verteiler[data-aktiv="2"] .fluss[data-k="2"] {
-  opacity: .75; animation: fliessen 1.1s linear infinite;
+/* Grad-Pille „Leicht/Mittel/Schwer“ mit 3-Balken-Anzeige: links oben in der Figurenfläche, auf Kopf-/Schulterhöhe,
+   über dem linken Pfeil (MZ, 27.10.2026: B1). Lage nur hier ändern (left/top). */
+.grad-stapel { position: absolute; z-index: 3; left: 0; top: 7%; justify-items: start; pointer-events: none; }
+.grad { display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px 4px 10px; border-radius: 999px; white-space: nowrap;
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.28); font-size: 15px; font-weight: 700; color: #fff; letter-spacing: .3px; }
+.grad::before { content: ""; width: 18px; height: 12px; flex: none;
+  background: linear-gradient(#fff, #fff) 0 100% / 4.5px 40% no-repeat,
+              linear-gradient(var(--g2, rgba(255,255,255,.35)), var(--g2, rgba(255,255,255,.35))) 6.75px 100% / 4.5px 70% no-repeat,
+              linear-gradient(var(--g3, rgba(255,255,255,.35)), var(--g3, rgba(255,255,255,.35))) 13.5px 100% / 4.5px 100% no-repeat;
 }
-.ventil { transition: transform .5s cubic-bezier(.2,.8,.2,1); transform-box: fill-box; transform-origin: center; }
-.verteiler[data-aktiv="0"] .ventil[data-k="0"], .verteiler[data-aktiv="1"] .ventil[data-k="1"], .verteiler[data-aktiv="2"] .ventil[data-k="2"] { transform: rotate(-90deg); }
-@keyframes fliessen { to { stroke-dashoffset: -32; } }
+.grad[data-k="1"]::before { --g2: #fff; }
+.grad[data-k="2"]::before { --g2: #fff; --g3: #fff; }
+
+/* Pfeile: runde weiße Knöpfe, an den Enden blass (kein Kreis) */
+.pfeil { position: absolute; z-index: 4; top: 45%; width: 44px; height: 44px; margin-top: -22px; padding: 0; border: 0; border-radius: 50%;
+  background: #fff; color: var(--haupt); cursor: pointer; display: grid; place-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,.22); transition: opacity .25s, transform .2s, box-shadow .2s; }
+.pfeil svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.pfeil.zurueck { left: 0; } .pfeil.vor { right: 0; }
+.pfeil:hover { transform: scale(1.06); box-shadow: 0 6px 16px rgba(0,0,0,.28); }
+.pfeil:active { transform: scale(.94); }
+.pfeil:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.pfeil[aria-disabled="true"] { opacity: .35; cursor: default; box-shadow: none; transform: none; }
+
+.wahl-best-text { margin: 4px 0 0; font-size: 16px; font-weight: 500; text-align: center; }
+.wahl-best-text b { font-weight: 800; }
+a.los {
+  margin-top: 12px; padding: 12px 36px; border-radius: 13px; background: #fff; color: var(--haupt); text-decoration: none;
+  font-size: 19px; font-weight: 800; letter-spacing: .2px; box-shadow: 0 6px 16px rgba(0,0,0,.22);
+  transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s;
+}
+a.los:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,.28); }
+a.los:active { transform: scale(.97); }
+a.los:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.punkte { display: flex; gap: 7px; margin-top: 12px; }
+.punkte i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.32); transition: background .3s, transform .3s; }
+.punkte i.an { background: rgba(255,255,255,.9); transform: scale(1.15); }
 
 /* ---------- Einsatzbuch, Footer ---------- */
 a.buch {
@@ -113,88 +154,76 @@ a.buch:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .fuss u { text-underline-offset: 2px; }
 .fuss .am-stueck { white-space: nowrap; }
 
-/* ---------- breit: Kacheln nebeneinander, Verteiler oben ---------- */
+/* ---------- breit (Tablet, Rechner): eine Spalte, etwas größer ---------- */
 @media (min-width: 760px) and (min-height: 540px) {
-  .seite { width: min(1080px, 100%); padding-left: max(28px, env(safe-area-inset-left)); padding-right: max(28px, env(safe-area-inset-right)); }
-  .verteiler { margin-top: clamp(26px, 4vh, 40px); } .buch { margin-top: 22px; }
-  a.stufe { align-content: start; }
+  .seite { width: min(640px, 100%); }
   .logo { height: 48px; }
-  .schriftzug { width: min(62vw, 560px); margin-top: 0; }
-  .verteiler { padding-left: 0; padding-top: 46px; }
-  .stufen { grid-template-columns: repeat(3, 1fr); gap: 22px; }
-  a.stufe { grid-template-columns: 1fr; grid-template-areas: "mano" "kopf"; justify-items: center; text-align: center; padding: 22px 18px 22px; row-gap: 12px; }
-  .stufe-kopf { align-items: center; }
-  .mano { width: 112px; height: 112px; }
-  .stufe-name { font-size: 32px; }
-  .stufe-grad { font-size: 16px; margin-top: 6px; }
-  .stufe-best { font-size: 16px; margin-top: 8px; }
+  .schriftzug { width: min(62vw, 500px); margin-top: 0; }
+  .titel { padding-top: clamp(6px, 2.5vh, 30px); }
+  .wahl { max-height: 760px; grid-template-rows: auto minmax(240px, 1fr) auto auto auto; }
+  .buehne { width: min(100%, 480px); }
+  .wahl-name-text { font-size: 38px; }
+  .pfeil { width: 50px; height: 50px; margin-top: -25px; }
+  .grad { font-size: 16px; }
   a.buch { width: min(420px, 100%); align-self: center; }
 }
 
-/* ---------- hohe Bildschirme: Kacheln größer, damit sie den Platz füllen (weniger Text, MZ) ---------- */
-@media (max-width: 759px) and (min-height: 860px) {
-  .stufen { gap: 16px; }
-  a.stufe { grid-template-columns: 90px 1fr; padding: 18px 20px 18px 16px; column-gap: 18px; }
-  .mano { width: 90px; height: 90px; }
-  .stufe-name { font-size: 30px; }
-  .stufe-grad { font-size: 16px; margin-top: 6px; }
-  .stufe-best { font-size: 16px; margin-top: 7px; }
+/* ---------- schmal (320) ---------- */
+@media (max-width: 359px) {
+  .seite { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .logo { height: 34px; }
+  .schriftzug { width: 92%; }
+  .wahl-name-text { font-size: 30px; }
+  .wahl { grid-template-rows: auto minmax(180px, 1fr) auto auto auto; }
+  .grad { font-size: 14px; padding: 3px 10px 3px 8px; }
+  .pfeil { width: 40px; height: 40px; margin-top: -20px; }
+  .wahl-best-text { font-size: 15px; }
+  a.los { font-size: 18px; padding: 11px 32px; }
 }
-@media (min-width: 760px) and (min-height: 900px) {
-  .stufen { gap: 26px; }
-  a.stufe { padding: 30px 20px 28px; row-gap: 16px; }
-  .mano { width: 136px; height: 136px; }
-  .stufe-name { font-size: 36px; }
-  .stufe-grad { font-size: 18px; }
-  .stufe-best { font-size: 17px; }
+/* niedrige Hochformate (z. B. 320×568): weniger Luft über dem Schriftzug */
+@media (orientation: portrait) and (max-height: 640px) {
+  .titel { padding-top: 4px; }
+  .wahl { margin-top: 4px; grid-template-rows: auto minmax(170px, 1fr) auto auto auto; }
+  .buch { margin-top: 12px; }
+  .fuss { padding-top: 10px; }
+  a.los { margin-top: 10px; }
+  .punkte { margin-top: 10px; }
 }
 
 /* ---------- quer und flach (Handy quer): zwei Spalten ---------- */
 @media (orientation: landscape) and (max-height: 539px) {
   .seite {
     display: grid; width: min(1000px, 100%); column-gap: 22px; row-gap: 10px;
-    grid-template-columns: minmax(230px, 38%) 1fr;
-    grid-template-areas: "kopf verteiler" "titel verteiler" "buch verteiler" "fuss verteiler";
+    grid-template-columns: minmax(210px, 36%) 1fr;
+    grid-template-areas: "kopf wahl" "titel wahl" "buch wahl" "fuss wahl";
     grid-template-rows: auto auto auto 1fr; align-items: start;
   }
-  .titel, .verteiler, .buch, .fuss { margin-top: 0; margin-bottom: 0; padding-top: 0; }
-  .titel { margin-top: 26px; }   /* ohne Gesamt-Bestwert: Schriftzug etwas tiefer */
+  .titel, .buch, .fuss { margin-top: 0; margin-bottom: 0; padding-top: 0; }
+  .titel { margin-top: 26px; }
   .buch { margin-top: 18px; }
   .fuss { align-self: end; }
-  .verteiler { align-self: center; }
   .schriftzug { width: 100%; margin-top: 0; }
-  .stufen { gap: 8px; }
-  a.stufe { grid-template-columns: 64px 1fr; padding: 10px 16px 10px 12px; column-gap: 14px; }
-  .mano { width: 64px; height: 64px; }
-  .stufe-name { font-size: 23px; }
-  .stufe-grad { font-size: 14px; margin-top: 3px; }
-  .stufe-best { margin-top: 4px; font-size: 14px; }
   a.buch { padding: 8px 14px; font-size: 16px; }
   .fuss { font-size: 11px; text-align: left; padding: 0; }
-}
-
-/* ---------- schmal (320) ---------- */
-@media (max-width: 359px) {
-  .seite { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); row-gap: 12px; }
-  .logo { height: 34px; }
-  .verteiler { padding-left: 24px; }
-  a.stufe { grid-template-columns: 66px 1fr; padding: 12px 12px 12px 10px; column-gap: 12px; }
-  .mano { width: 66px; height: 66px; }
-  .stufe-name { font-size: 24px; }
-  .stufe-grad { font-size: 14px; }
-  .stufe-best { font-size: 13.5px; }
-  .schriftzug { width: 92%; }
+  .wahl { align-self: stretch; max-height: none; margin-top: 0; grid-template-rows: auto minmax(140px, 1fr) auto auto auto; }
+  .buehne { width: min(100%, 360px); }
+  .wahl-name-text { font-size: 26px; }
+  .buehne { margin: 4px 0 0; }
+  .grad { font-size: 13.5px; padding: 3px 10px 3px 8px; }
+  .pfeil { width: 40px; height: 40px; margin-top: -20px; }
+  .wahl-best-text { font-size: 14px; margin-top: 2px; }
+  a.los { margin-top: 7px; padding: 8px 28px; font-size: 17px; }
+  .punkte { margin-top: 8px; }
 }
 
 /* ---------- sanftes Erscheinen (gestaffelt über --v) ---------- */
 .ein { opacity: 0; }
 .ein.da { animation: einblenden .6s var(--v, 0s) cubic-bezier(.2,.8,.2,1) both; }
-a.stufe.ein.da { animation-name: hereingleiten; }
+.buehne.ein.da { animation-name: hereingleiten; }
+.plakette.ein.da { animation-name: aufploppen; }
 @keyframes einblenden { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes hereingleiten { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
-@media (orientation: landscape) and (max-height: 539px) {
-  @keyframes hereingleiten { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
-}
+@keyframes aufploppen { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
 
 /* ---------- Intro (start/intro.js) ---------- */
 html.intro { overflow: hidden; }
@@ -207,11 +236,13 @@ html.intro .logo #schriftzug, html.intro .logo #zeichen { opacity: 0; }
 html.intro .schriftzug .sz-o, html.intro .schriftzug .sz-R, html.intro .schriftzug .sz-rest > g,
 html.intro .schriftzug .sz-ausruf, html.intro .schriftzug .sz-linie { opacity: 0; }
 
+/* weniger Bewegung: nur Überblenden, Figur gleitet nicht */
 @media (prefers-reduced-motion: reduce) {
-  .ein.da, a.stufe.ein.da { animation: blenden .35s var(--v, 0s) ease-out both; }
+  .ein.da, .buehne.ein.da, .plakette.ein.da { animation: blenden .35s var(--v, 0s) ease-out both; }
   @keyframes blenden { from { opacity: 0; } to { opacity: 1; } }
   .nadel { transition: none; }
-  a.stufe, a.buch, .ton, .ventil { transition: none; }
-  a.stufe:hover, a.buch:hover { transform: none; }
-  .verteiler[data-aktiv] .fluss { animation: none !important; opacity: 0 !important; }
+  .stapel > *, .folie { transition: opacity .3s ease; }
+  .stapel > .vorher, .stapel > .nachher, .folie.vorher, .folie.nachher { transform: none; }
+  a.los, a.buch, .ton, .pfeil, .figur-bild { transition: none; }
+  a.los:hover, a.buch:hover, .pfeil:hover, .folie.aktiv .figur:hover .figur-bild { transform: none; }
 }

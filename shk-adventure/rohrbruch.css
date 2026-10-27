@@ -138,6 +138,12 @@ html.rb-ruhig .rb-marke, html.rb-ruhig .rb-marke .kachel { animation: none !impo
 #rb.quer .rb-leiste { flex: 0 1 auto; width: min(480px, calc(100vw - var(--raum) - 26px)); height: var(--raum); }
 .rb-leiste > * { flex-shrink: 0; }
 .rb-leiste.mehr { -webkit-mask-image: linear-gradient(#000 calc(100% - 26px), rgba(0,0,0,.25)); mask-image: linear-gradient(#000 calc(100% - 26px), rgba(0,0,0,.25)); }
+/* flach quer (Handy quer, QA Release 4): Leiste nach unten gescrollt → oben sanft ausblenden statt hart angeschnitten */
+@media (orientation: landscape) and (max-height: 520px) {
+  #rb.quer .rb-leiste.oben { -webkit-mask-image: linear-gradient(transparent, #000 30px); mask-image: linear-gradient(transparent, #000 30px); }
+  #rb.quer .rb-leiste.oben.mehr { -webkit-mask-image: linear-gradient(transparent, #000 30px, #000 calc(100% - 26px), rgba(0,0,0,.25));
+    mask-image: linear-gradient(transparent, #000 30px, #000 calc(100% - 26px), rgba(0,0,0,.25)); }
+}
 .rb-leistenkopf { display: flex; align-items: center; gap: 10px; }
 .rb-zeichen { height: 26px; width: auto; flex: none; }
 .rb-leistenkopf b { display: block; font-family: var(--schrift-kopf); font-size: 18px; color: var(--dunkel); line-height: 1.1; }
@@ -186,14 +192,29 @@ html.rb-ruhig .rb-marke, html.rb-ruhig .rb-marke .kachel { animation: none !impo
 .rb-teil.genommen:not(:disabled) { opacity: .6; border-color: var(--gut); }   /* Meister: antippen = wieder auspacken */
 .rb-versteck { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
 .rb-versteck p { margin: 0; font-size: 15px; }
-.rb-versteck .rb-fundname { font-size: 14px; color: var(--leise); }
+/* Fund-Fenster Variante 2 „Gegenstand im Mittelpunkt“ (MZ, 27.10.2026): Name des Gegenstands als Überschrift (größer als die
+   Versteck-Überschrift beim leeren Versteck), graue Fundort-Zeile über dem Bild (--leise auf Weiß ca. 5,9:1) */
+.rb-nah.mitfund .rb-nahkopf b { font-size: 21px; line-height: 1.12; -webkit-hyphens: auto; hyphens: auto; overflow-wrap: break-word; min-width: 0; }
+.rb-versteck .rb-fundort { font-size: 13.5px; line-height: 1.3; color: var(--leise); max-width: 30em; }
 .rb-versteck .rb-fundfrage { font-weight: 700; font-size: 16px; color: var(--dunkel); max-width: 30em; }
 .rb-fundknoepfe { display: flex; gap: 10px; justify-content: center; }
 .rb-fundknoepfe .rb-knopf { min-width: 104px; }
-.rb-fundantwort { margin: 0; font-size: 15px; line-height: 1.4; max-width: 30em; animation: rbEin .3s ease-out both; }
+/* Rückmeldung nach Ja als Kasten mit abgerundeten Ecken (MZ, 27.10.2026). Unterschied nicht nur über die Farbe: Zeichen vorn
+   (✕ = Fehler, i = Hinweis) und Schriftstärke. Fehler: hellrot, dunkelrote Schrift (ca. 7,4:1). Sonst ruhig in Hausfarbe (kunde.js). */
+/* Text mittig (MZ, 27.10.2026). Zeichen und Text sind zwei Flex-Teile mit Umbruch: passt der Satz in eine Zeile, steht das
+   Zeichen davor und beide zusammen mittig; ist er länger, rutscht der Text als Ganzes in die nächste Reihe – das Zeichen steht
+   dann mittig darüber, alle Zeilen mittig darunter (ohne Messen im Code, gilt auch in der knappen Fassung). */
+.rb-fundantwort { position: relative; margin: 0; font-size: 15px; line-height: 1.4; max-width: 30em; text-align: center;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: 8px; row-gap: 3px;
+  padding: 8px 14px; border-radius: 12px; border: 1px solid transparent; animation: rbEin .3s ease-out both; }
 .rb-fundantwort:empty { display: none; }
-.rb-fundantwort.falsch { color: var(--falsch); font-weight: 700; }
-.rb-fundantwort.witzig { padding: 8px 12px; border-radius: 12px; background: #fff6d6; font-style: italic; }
+.rb-fundantwort::before { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  font: 800 12px/1 var(--schrift-kopf); color: #fff; }
+.rb-fundantwort.falsch { background: #fbe5e2; border-color: #efb7ae; color: #8e2318; font-weight: 700; }
+.rb-fundantwort.falsch::before { content: "✕"; background: #b3321f; }
+.rb-fundantwort.witzig { font-style: italic; }
+.rb-fundantwort.info { background: color-mix(in srgb, var(--haupt) 9%, #fff); border-color: color-mix(in srgb, var(--haupt) 30%, #fff); color: var(--text); }
+.rb-fundantwort.info::before { content: "i"; background: var(--haupt); color: var(--haupt-text, #fff); font-family: Georgia, serif; font-style: italic; font-size: 14px; }
 .rb-versteck canvas { flex: none; }
 /* Fund-Fenster zu flach (spiel.js fundEinpassen): Bild ist schon kleiner, jetzt auch Abstände und Schrift */
 .rb-nah.knapp { padding-top: 6px; padding-bottom: 8px; gap: 4px; }
@@ -201,9 +222,11 @@ html.rb-ruhig .rb-marke, html.rb-ruhig .rb-marke .kachel { animation: none !impo
 .rb-nah.knapp .rb-nahkopf b { font-size: 16px; }
 .rb-nah.knapp .rb-versteck { gap: 5px; }
 .rb-nah.knapp .rb-versteck p, .rb-nah.knapp .rb-fundantwort { font-size: 13.5px; line-height: 1.3; }
-.rb-nah.knapp .rb-versteck .rb-fundname { font-size: 13px; }
+.rb-nah.knapp .rb-versteck .rb-fundort { font-size: 12.5px; }
 .rb-nah.knapp .rb-versteck .rb-fundfrage { font-size: 14.5px; }
-.rb-nah.knapp .rb-fundantwort.witzig { padding: 5px 10px; }
+.rb-nah.knapp.mitfund .rb-nahkopf b { font-size: 18px; }
+.rb-nah.knapp .rb-fundantwort { padding: 5px 10px; column-gap: 6px; row-gap: 2px; }
+.rb-nah.knapp .rb-fundantwort::before { width: 17px; height: 17px; font-size: 11px; }
 .rb-nah.knapp .rb-fundknoepfe .rb-knopf { padding: 7px 12px; }
 
 /* Werkzeugsuche: drei gleichwertige Knöpfe ohne Unterzeilen (MZ, 24.10.2026) */
@@ -373,73 +396,87 @@ html.rb-ruhig .hg-knopf.bereit { animation: none; box-shadow: 0 0 0 3px color-mi
 .rb-fragebox { width: min(360px, calc(100% - 32px)); background: #fff; border-radius: 14px; padding: 16px; display: grid; gap: 8px; animation: rbAuf .2s ease-out both; }
 .rb-fragebox p { margin: 0 0 6px; font-size: 16px; line-height: 1.4; }
 
-/* ---------- Startbild Variante A (MZ, 25.10.2026): blau wie die Startseite, Bedienteil mit Display, Anleitung, Knöpfe ---------- */
+/* ---------- Startbild neu (MZ, 27.10.2026, Skizze startbild-v1-anlage): Anlage als weicher Hintergrund, Logo weiß oben links,
+   dunkles Display als LCD-Raster (ohne Gehäuse/Drehknöpfe), weiße Karte mit der Anleitung, Knöpfe ---------- */
 .stil-rohrbruch #startSchirm, .stil-rohrbruch #endSchirm { display: block; padding: 0; background: var(--wand); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .stil-rohrbruch #startSchirm[hidden], .stil-rohrbruch #endSchirm[hidden] { display: none; }
 .rb-unsichtbar { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+/* ohne Hintergrundbild (kunde.js startbildHintergrund: null): Fläche in Hausfarbe wie die Startseite */
 .stil-rohrbruch #startSchirm:not([hidden]) { display: flex; overflow-y: auto; background: var(--haupt);
   background-image: radial-gradient(120% 70% at 15% 0%, rgba(255,255,255,.16), rgba(255,255,255,0) 60%),
                     radial-gradient(90% 60% at 100% 100%, rgba(0,0,0,.18), rgba(0,0,0,0) 70%); }
-.rb-startinhalt { width: min(440px, 100%); margin: auto; padding: max(14px, env(safe-area-inset-top)) 18px max(16px, env(safe-area-inset-bottom));
+.stil-rohrbruch #startSchirm.mitbild:not([hidden]) { background: #d9dcdf; }
+/* Hintergrundbild: steht fest hinter dem (ggf. scrollenden) Inhalt, ca. 3px weichgezeichnet; Rand 14px über den Bildschirm hinaus,
+   damit die weichen Kanten nicht zu sehen sind. Lage (object-position) rechnet schirme.js (hgLage). */
+.rb-starthg { position: fixed; inset: -14px; z-index: 0; overflow: hidden; pointer-events: none; filter: blur(3px); opacity: 0; transition: opacity .5s ease-out; }
+.rb-starthg.da { opacity: 1; }
+.rb-starthg img { display: block; width: 100%; height: 100%; object-fit: cover; }
+#startSchirm:not(.mitbild) .rb-starthg, #startSchirm:not(.mitbild) .rb-startschleier { display: none; }
+/* Schleier: heller Schleier ca. 35 %, oben ein weicher Verlauf in Kundenfarbe-dunkel, damit das weiße Logo lesbar bleibt */
+.rb-startschleier { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(color-mix(in srgb, var(--dunkel) 45%, transparent) 0, rgba(255,255,255,.3) max(20%, 96px), rgba(255,255,255,.35)); }
+.rb-startinhalt { position: relative; z-index: 1; width: min(440px, 100%); min-height: 100%; margin: 0 auto;
+  padding: max(14px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 18px; }
-#startSchirm .rb-logoquer { position: static; display: block; height: 40px; width: auto; align-self: flex-start; animation: rbEin .5s ease-out both; }
-.rb-startlinks, .rb-startrechts { display: flex; flex-direction: column; gap: 14px; }
-/* Bedienteil: hellgraue, abgerundete Gerätefront mit Display (Rahmen in Hausfarbe) und drei grauen Knöpfen */
-.rb-bedienteil { position: relative; padding: 14px 14px 16px; border-radius: 22px;
-  background: linear-gradient(180deg, #f4f5f6 0%, #e3e6e9 55%, #d6dadf 100%);
-  box-shadow: 0 14px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -2px 4px rgba(0,0,0,.08);
+/* Logo weiß, Höhe wie auf der Startseite (start/start.css .logo: 40px, breit 48px, schmal 34px), leichter Schatten */
+#startSchirm .rb-logoquer { position: static; display: block; height: 40px; width: auto; align-self: flex-start; flex: none;
+  filter: drop-shadow(0 1px 3px rgba(10,30,60,.55)); animation: rbEin .5s ease-out both; }
+.rb-startlinks, .rb-startrechts { display: flex; flex-direction: column; gap: 12px; }
+.rb-startlinks { margin-top: clamp(4px, 5vh, 56px); }
+.rb-startrechts { margin-top: auto; }
+/* Display: nur die dunkle Fläche mit abgerundeten Ecken und Schatten; Inhalt als Raster (schirme.js zeichneDisplay) */
+.rb-display { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 0 12px; border-radius: 10px; border: 3px solid color-mix(in srgb, var(--dunkel) 60%, #000);
+  background: color-mix(in srgb, var(--dunkel) 72%, #000);
+  box-shadow: 0 6px 22px rgba(0,0,0,.35), inset 0 0 18px rgba(0,0,0,.35);
   animation: rbEin .5s .08s ease-out both; }
-.rb-display { position: relative; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--dw, 300px) * .04);
-  aspect-ratio: 595 / 209; padding: calc(var(--dw, 300px) * .04) calc(var(--dw, 300px) * .05);
-  border-radius: 12px; border: 5px solid var(--haupt);
-  background: radial-gradient(120% 120% at 30% 20%, #1c2a38 0%, #0d151d 70%);
-  box-shadow: inset 0 0 0 2px rgba(0,0,0,.55), inset 0 6px 18px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.7);
-  color: #cfe9ff; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
-.rb-punkte { width: 100%; height: calc(var(--dw, 300px) * .2); flex: none; animation: rbDisplay .9s .2s steps(6) both; }
+.rb-display canvas { display: block; flex: none; }
+.rb-pxtitel { margin-bottom: 4px; animation: rbDisplay .9s .25s steps(6) both; }
+.rb-pxzeile { animation: rbDisplay .6s .9s steps(4) both; }
+.rb-pxbest { animation-delay: 1.1s; }
 @keyframes rbDisplay { from { opacity: 0; } }
 #startSchirm .rb-display .unter::after { display: none; }
-.rb-display > * { flex-shrink: 0; }
-.rb-dzeile { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; white-space: nowrap; font-size: clamp(9px, calc(var(--dw, 300px) * .036), 16px);
-  color: #9fe8ff; text-transform: uppercase; letter-spacing: .5px; animation: rbDisplay .6s 1s steps(4) both; }
-#startSchirm .rb-dzeile .besttafel { all: unset; display: flex; gap: .5em; align-items: baseline; }
-#startSchirm .rb-dzeile .besttafel .name { font-size: 1em; font-weight: 700; letter-spacing: .5px; opacity: .8; }
-#startSchirm .rb-dzeile .besttafel .zahl { all: unset; font-size: 1.25em; font-weight: 800; color: #fff; }
-#startSchirm .rb-dzeile .besttafel .zahl small { font-size: .75em; color: #9fe8ff; margin: 0; opacity: 1; }
-.rb-knoepfchen { display: flex; justify-content: center; gap: 9%; margin-top: 14px; }
-.rb-knoepfchen span { width: 13%; max-width: 46px; aspect-ratio: 1; border-radius: 50%;
-  background: radial-gradient(circle at 38% 32%, #fbfbfb 0%, #c9ced3 38%, #8e959c 78%, #6d747b 100%);
-  box-shadow: 0 3px 6px rgba(0,0,0,.28), inset 0 -2px 3px rgba(0,0,0,.18), 0 0 0 3px #cfd4d9; }
 /* Knöpfe in Endbild und Ausbildungs-Hinweis (aus dem früheren Startbild-Block, gelten weiter) */
 .stil-rohrbruch .rb-endknoepfe .knopf, .stil-rohrbruch .rb-ausbildung .knopf { margin: 0; }
 .stil-rohrbruch .knopf.zweit { color: var(--dunkel); background: rgba(255,255,255,.7); border-color: color-mix(in srgb, var(--haupt) 55%, #fff); }
 .stil-rohrbruch .knopf.zweit:hover { background: #fff; }
 /* weiße Karte nur mit der Anleitung */
-.rb-startkarte { padding: 16px 18px; border-radius: 16px; background: #fff; color: #1b2430; box-shadow: 0 8px 22px rgba(0,0,0,.22);
+.rb-startkarte { padding: 16px 18px; border-radius: 14px; background: #fff; color: #1b2430; box-shadow: 0 8px 22px rgba(0,0,0,.2);
   animation: rbEin .45s .16s ease-out both; }
-#startSchirm .rb-startkarte .anleitung { margin: 0; font-size: 15.5px; line-height: 1.5; opacity: 1; color: #2a3440; text-align: left; }
+/* Barlow auch für den Text der weißen Karte und des Stufen-Zwischenbilds (MZ, 27.10.2026; bisher Systemschrift) */
+#startSchirm .rb-startkarte .anleitung { margin: 0; font-family: var(--schrift-kopf); font-size: 15.5px; line-height: 1.5; opacity: 1; color: #2a3440; text-align: left; }
 .rb-startknoepfe { display: flex; flex-direction: column; gap: 10px; animation: rbEin .45s .24s ease-out both; }
-.stil-rohrbruch #startSchirm .rb-startknoepfe .knopf { margin: 0; text-align: center; white-space: nowrap; }
-.stil-rohrbruch #startSchirm #losKnopf { background: #fff; color: var(--haupt); border-color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
-.stil-rohrbruch #startSchirm #losKnopf::after { background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--haupt) 22%, transparent), transparent); }
-.stil-rohrbruch #startSchirm .rb-startknoepfe .knopf.zweit { background: transparent; color: #fff; border-color: rgba(255,255,255,.75); }
-.stil-rohrbruch #startSchirm .rb-startknoepfe .knopf.zweit:hover { background: rgba(255,255,255,.12); }
-#startSchirm .rb-startrechts .quellen { margin: 0; font-size: 11px; color: #fff; opacity: .6; text-align: center; }
+/* Knopftext waagrecht und senkrecht mittig (MZ, 27.10.2026): Flex statt Block – reicht der Platz einmal nicht, ragt der Text
+   gleichmäßig nach beiden Seiten statt nur nach rechts. Glanz (::after, absolut) und Glimmen (Schatten) verschieben nichts. */
+.stil-rohrbruch #startSchirm .rb-startknoepfe .knopf { margin: 0; text-align: center; white-space: nowrap;
+  display: flex; align-items: center; justify-content: center; }
+/* „An die Arbeit!“ gefüllt in Hausfarbe, „Zum Menü“ weiß mit Rand in Hausfarbe (auf hellem Grund lesbar) */
+.stil-rohrbruch #startSchirm #losKnopf { background: var(--haupt); color: var(--haupt-text, #fff); border-color: var(--haupt); box-shadow: 0 6px 16px rgba(0,0,0,.22); }
+.stil-rohrbruch #startSchirm #losKnopf::after { background: linear-gradient(100deg, transparent, rgba(255,255,255,.28), transparent); }
+.stil-rohrbruch #startSchirm .rb-startknoepfe .knopf.zweit { background: #fff; color: var(--haupt); border-color: var(--haupt); }
+.stil-rohrbruch #startSchirm .rb-startknoepfe .knopf.zweit:hover { background: color-mix(in srgb, var(--haupt) 8%, #fff); }
+#startSchirm:not(.mitbild) .rb-startknoepfe .knopf.zweit { border-color: #fff; }
+#startSchirm .rb-startrechts .quellen { margin: 0; font-size: 11px; color: var(--dunkel); opacity: .75; text-align: center; }
 #startSchirm .rb-startrechts .quellen:empty { display: none; }
-@media (min-height: 760px) { .rb-startinhalt { gap: 24px; } #startSchirm .rb-logoquer { height: 46px; } }
-@media (max-width: 359px) { .rb-startinhalt { padding-left: 12px; padding-right: 12px; gap: 14px; } #startSchirm .rb-startkarte .anleitung { font-size: 14.5px; }
-  .rb-startkarte { padding: 13px 14px; } }
-/* quer und flach: Logo + Bedienteil links, Karte + Knöpfe rechts */
+@media (max-width: 359px) { .rb-startinhalt { padding-left: 12px; padding-right: 12px; gap: 14px; } #startSchirm .rb-logoquer { height: 34px; }
+  #startSchirm .rb-startkarte .anleitung { font-size: 14.5px; } .rb-startkarte { padding: 13px 14px; } }
+@media (min-width: 760px) and (min-height: 540px) { #startSchirm .rb-logoquer { height: 48px; } }
+/* quer und flach: Logo oben über die ganze Breite, darunter Display links, Karte + Knöpfe rechts */
 #startSchirm.quer .rb-startinhalt { width: min(900px, 100%); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 26px; row-gap: 10px;
-  grid-template-areas: "logo rechts" "links rechts"; align-items: center; padding: 12px max(22px, env(safe-area-inset-right)) 12px max(22px, env(safe-area-inset-left)); }
-#startSchirm.quer .rb-logoquer { grid-area: logo; height: 34px; align-self: end; }
-#startSchirm.quer .rb-startlinks { grid-area: links; align-self: start; }
-#startSchirm.quer .rb-startrechts { grid-area: rechts; gap: 10px; }
-#startSchirm.quer .rb-bedienteil { padding: 10px 10px 12px; border-radius: 18px; }
-#startSchirm.quer .rb-knoepfchen { margin-top: 10px; }
+  grid-template-rows: auto 1fr; grid-template-areas: "logo logo" "links rechts"; align-items: center;
+  padding: max(12px, env(safe-area-inset-top)) max(22px, env(safe-area-inset-right)) 12px max(22px, env(safe-area-inset-left)); }
+#startSchirm.quer .rb-logoquer { grid-area: logo; }
+#startSchirm.quer .rb-startlinks { grid-area: links; margin-top: 0; }
+#startSchirm.quer .rb-startrechts { grid-area: rechts; gap: 10px; margin-top: 0; }
+#startSchirm.quer .rb-display { padding: 8px 0 10px; }
 #startSchirm.quer .rb-startkarte { padding: 12px 14px; }
 #startSchirm.quer .rb-startkarte .anleitung { font-size: 14px; line-height: 1.42; }
-#startSchirm.quer .rb-startknoepfe { flex-direction: row; }
-#startSchirm.quer .rb-startknoepfe .knopf { flex: 1; padding: 10px 12px; font-size: 16px; }
+/* quer: beide Knöpfe gleich breit, solange der Text hineinpasst; sonst bekommt „An die Arbeit!“ so viel Breite, wie er braucht
+   (min-width: max-content), „Zum Menü“ den Rest – links und rechts vom Text bleibt in jedem Knopf gleich viel Luft (MZ, 27.10.2026) */
+#startSchirm.quer .rb-startknoepfe { flex-direction: row; gap: 8px; }
+#startSchirm.quer .rb-startknoepfe .knopf { flex: 1 1 0; min-width: max-content; padding: 10px 12px; font-size: 16px; }
+@media (max-width: 600px) { #startSchirm.quer .rb-startknoepfe .knopf { padding-left: 10px; padding-right: 10px; } }
+@media (prefers-reduced-motion: reduce) { .rb-starthg { transition: none; } .rb-pxtitel, .rb-pxzeile { animation: rbBlende .2s ease-out both; } }
 
 /* ---------- Endbild: Manometer ---------- */
 /* Karte senkrecht mittig, solange sie passt (margin: auto); ist sie höher als der Bildschirm, beginnt sie oben */
@@ -511,7 +548,7 @@ html.rb-ruhig .hg-knopf.bereit { animation: none; box-shadow: 0 0 0 3px color-mi
 /* weniger Bewegung: nur kurz einblenden */
 @media (prefers-reduced-motion: reduce) {
   .rb-mano .nadel { transition: none !important; }
-  .rb-nah, .rb-szene, .rb-buchkarte, .rb-funk, .rb-titel { animation: rbBlende .2s ease-out both !important; }
+  .rb-nah, .rb-szene, .rb-buchkarte, .rb-funk, .rb-titel, .rb-fundantwort { animation: rbBlende .2s ease-out both !important; }
 }
 html.rb-ruhig *, html.rb-ruhig *::before, html.rb-ruhig *::after { animation-duration: .01s !important; animation-delay: 0s !important; transition: none !important; }
 
@@ -525,6 +562,7 @@ html.rb-ruhig *, html.rb-ruhig *::before, html.rb-ruhig *::after { animation-dur
   .rb-nah { padding: 6px 10px 8px; gap: 5px; }
   .rb-nahkopf { min-height: 30px; }
   .rb-nahkopf b { font-size: 16px; }
+  .rb-nah.mitfund .rb-nahkopf b { font-size: 18px; }   /* Gegenstand bleibt größer als die Versteck-Überschrift */
   .rb-zu { width: 30px; height: 30px; }
   .rb-hghinweis, .rb-hgmeldung, .rb-lupentext { font-size: 13px; }
   .hg-notiz { padding: 3px 8px; font-size: 12px; }
@@ -715,7 +753,7 @@ html.rb-ruhig .rb-stempel { animation: rbBlende .25s ease-out both; }
 
 /* Silbentrennung (MZ: „bitte an Umbruch denken“): Kacheln, Knöpfe, Schilder trennen deutsch; dazu weiche Trennstellen aus
    rohrbruch-trennstellen.md (RB.trenn beim Anzeigen) */
-.rb-teil span, .rb-packteil span, .rb-wahltext, .rb-knopf, .rb-nahkopf b, .rb-fundname, .rb-zwding span, .rb-packpruefung li span,
+.rb-teil span, .rb-packteil span, .rb-wahltext, .rb-knopf, .rb-nahkopf b, .rb-fundort, .rb-zwding span, .rb-packpruefung li span,
 .rb-buchkarte h2, .rb-leistenkopf b, .hg-knopf, .hg-teilschritte li {
   -webkit-hyphens: auto; hyphens: auto; overflow-wrap: break-word; }
 .rb-wahlknopf { -webkit-hyphens: auto; hyphens: auto; }
@@ -845,6 +883,10 @@ html.rb-ruhig .rb-stempel { animation: rbBlende .25s ease-out both; }
   #endSchirm.quer .rb-endbewertung .ueberschrift { font-size: 24px; text-align: left; }
   #endSchirm.quer .rb-endteile { grid-area: teile; }
   #endSchirm.quer .rb-endstufen { grid-area: stufen; }
+  /* QA Release 4: Beschriftung (URSACHE, WERKZEUG, REPARATUR) passt sich der Kachelbreite an statt „WERKZ…“ –
+     schmale Kacheln (568×320, 640×360, 667×375) bis 9px ohne Sperrung, breite bleiben wie bisher (11px, .3px) */
+  #endSchirm.quer .rb-endteil { container-type: inline-size; padding-left: 1px; padding-right: 1px; }
+  #endSchirm.quer .rb-endteil span { font-size: clamp(9px, calc(100cqi / 5.9), 11px); letter-spacing: clamp(0px, calc(100cqi / 5.9 - 10.4px), .3px); }
 }
 @media (orientation: landscape) and (max-height: 520px) {
   .stil-rohrbruch #endSchirm.quer:not([hidden]) { padding: 4px 0; }
@@ -903,7 +945,7 @@ html.rb-ruhig .rb-erklaerpop { animation: none; }
 @keyframes rbStufeFigur { from { opacity: 0; transform: translateY(16px) scale(.96); } }
 .rb-stufenkarte { position: relative; overflow: hidden; width: 100%; padding: 16px 18px 20px; border-radius: 16px; background: #fff; color: #1b2430;
   box-shadow: 0 10px 26px rgba(0,0,0,.25); animation: rbEin .45s .15s ease-out both; }
-.rb-stufenkarte p { margin: 0; font-size: 16.5px; line-height: 1.45; font-weight: 600; text-align: center; color: var(--dunkel); }
+.rb-stufenkarte p { margin: 0; font-family: var(--schrift-kopf); font-size: 16.5px; line-height: 1.45; font-weight: 600; text-align: center; color: var(--dunkel); }
 .rb-stufenbalken { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: color-mix(in srgb, var(--haupt) 15%, #fff); }
 .rb-stufenbalken i { display: block; height: 100%; width: 100%; background: var(--haupt); transform-origin: left; animation: rbBalken 3s linear both; }
 @keyframes rbBalken { from { transform: scaleX(0); } }
@@ -920,7 +962,6 @@ html.rb-ruhig .rb-erklaerpop { animation: none; }
 @media (min-width: 900px) and (min-height: 700px) {
   .rb-startinhalt { width: min(540px, 100%); }
   #startSchirm .rb-startkarte .anleitung { font-size: 17px; }
-  #startSchirm .rb-logoquer { height: 52px; }
   .rb-stufenbild { width: min(520px, calc(100% - 32px)); }
   .rb-stufenfigur { height: min(56vh, 500px); }
   .rb-stufenkarte p { font-size: 18px; }

@@ -1,7 +1,7 @@
 // Rohrbruch – Start- und Endbild im Stil „Heizungs-Display“ (MZ, 24.10.2026, Variante B), sammlungs-eigen:
 // Der Rahmen baut Start- und Endbild wie immer (Texte, Bestwert, Knöpfe); dieses Skript ordnet seine Teile neu an.
-// Start (Variante A, MZ 25.10.2026): Fläche in Hausfarbe, Logo weiß oben links, kleines Bedienteil mit Display (Schriftzug,
-// Stufe, Bestwert) und drei Knöpfen, weiße Karte mit der Anleitung, „An die Arbeit!“/„Zum Menü“.
+// Start (neu, MZ 27.10.2026): Anlage als weicher Hintergrund, Logo weiß oben links, dunkles Display als LCD-Raster (Schriftzug,
+// Stufe, Bestwert), weiße Karte mit der Anleitung, „An die Arbeit!“/„Zum Menü“.
 // Ende: Karte wie ein Gerätedeckel, großes Manometer – Zeiger dreht auf die Punkte –, Bewertung in Markenfarbe,
 // Zeit als Plakette, Aufschlüsselung, Einsätze, Ausbildungs-Hinweis.
 (function () {
@@ -11,63 +11,172 @@
   function el(tag, klasse, text) { const e = document.createElement(tag); if (klasse) e.className = klasse; if (text != null) e.textContent = text; return e; }
   document.documentElement.classList.add('stil-rohrbruch');
 
-  // ---------- Startbild (Variante A, MZ 25.10.2026) ----------
-  // Fläche in Hausfarbe wie die Startseite, Logo (weiß) frei oben links, kleines Bedienteil (hellgrau, abgerundet) mit dem
-  // Display (Schriftzug „Rohrbruch!“, Stufe, Bestwert) und drei grauen Knöpfen, darunter eine weiße Karte nur mit der Anleitung,
-  // Knöpfe „An die Arbeit!“ (weiß, Schrift in Hausfarbe) und „Zum Menü“ (Umriss). Kein Thermen-Bild, kein Manometer, kein Stufentext
-  // (der steht im Zwischenbild nach „An die Arbeit!“, spiel.js stufenBild).
+  // ---------- Startbild (neu, MZ 27.10.2026, Skizze „startbild-v1-anlage“) ----------
+  // Hintergrund = Bild einer Anlage (kunde.js startbildHintergrund, Musterfirma: Wärmepumpe außen), flächig (cover), leicht
+  // weichgezeichnet und aufgehellt, oben ein weicher dunkler Verlauf, damit das weiße Logo (oben links, Höhe wie auf der Startseite)
+  // lesbar bleibt. Darauf nur das dunkle Display (ohne Gehäuse und Drehknöpfe) als LCD-Raster: Schriftzug „Rohrbruch!“ in groben
+  // Punkten, „Stufe …“ und „Bestwert …“ etwas feiner. Unten die weiße Karte mit der Anleitung, „An die Arbeit!“ (gefüllt in
+  // Hausfarbe) und „Zum Menü“ (weiß mit Rand). Stufentext steht im Zwischenbild nach „An die Arbeit!“ (spiel.js stufenBild).
   const start = $('#startSchirm'), karte = start.querySelector('.karte');
   const logo = el('img', 'rb-logoquer'); logo.src = K.logo || K.logoQuer || K.logoAufHell; logo.alt = K.firma || '';
-  const display = el('div', 'rb-display'), punkte = el('canvas', 'rb-punkte');
-  const dzeile = el('div', 'rb-dzeile'), dstufe = el('span', 'rb-dstufe');
   const titel = karte.querySelector('.titel'), unter = karte.querySelector('.unter'), anleitung = karte.querySelector('.anleitung');
   const tafel = karte.querySelector('.besttafel'), los = karte.querySelector('#losKnopf'), menue = karte.querySelector('a.knopf'), quellen = karte.querySelector('.quellen');
   // Startknopf heißt „An die Arbeit!“ (MZ, 25.10.2026) statt „Los geht's“ des Rahmens; Rahmen-Schlüssel losKnopf möglich
   los.textContent = ((window.ROHRBRUCH || {}).rahmen || {}).losKnopf || 'An die Arbeit!';
-  titel.classList.add('rb-unsichtbar');
-  dzeile.append(dstufe, tafel);
-  tafel.querySelector('.name').textContent = 'Bestwert';   // im Display kurz
   // MZ (nach dem Release, 25.10.2026): Frage im Display ersatzlos gestrichen (Rahmen schreibt sie, bleibt unsichtbar)
   unter.style.setProperty('display', 'none', 'important');
-  display.append(titel, punkte, dzeile, unter);
-  const bedienteil = el('div', 'rb-bedienteil'), knoepfchen = el('div', 'rb-knoepfchen');
-  for (let i = 0; i < 3; i++) knoepfchen.append(el('span'));
-  bedienteil.append(display, knoepfchen);
+  tafel.querySelector('.name').textContent = 'Bestwert';
+  // Display: drei Leinwände (Raster), dazu der Text für Vorlesehilfen (Titel, Stufe, Bestwert des Rahmens)
+  const display = el('div', 'rb-display');
+  const pxTitel = el('canvas', 'rb-pxtitel'), pxStufe = el('canvas', 'rb-pxzeile'), pxBest = el('canvas', 'rb-pxzeile rb-pxbest');
+  [pxTitel, pxStufe, pxBest].forEach(c => c.setAttribute('aria-hidden', 'true'));
+  const dstufe = el('span', 'rb-dstufe'), vorlesen = el('div', 'rb-unsichtbar');
+  vorlesen.append(titel, dstufe, tafel, unter);
+  display.append(pxTitel, pxStufe, pxBest, vorlesen);
   const startkarte = el('div', 'rb-startkarte'); startkarte.append(anleitung);
   const startknoepfe = el('div', 'rb-startknoepfe'); startknoepfe.append(los); if (menue) startknoepfe.append(menue);
   const startInhalt = el('div', 'rb-startinhalt'), linksS = el('div', 'rb-startlinks'), rechtsS = el('div', 'rb-startrechts');
-  linksS.append(bedienteil);
+  linksS.append(display);
   rechtsS.append(startkarte, startknoepfe, quellen);
   startInhalt.append(logo, linksS, rechtsS);
-  start.append(startInhalt);
+  // Hintergrund (eigene Ebene, bleibt beim Scrollen stehen) und Schleier mit dem dunklen Verlauf oben
+  const HG = K.startbildHintergrund;
+  const hg = el('div', 'rb-starthg'), hgBild = el('img'), schleier = el('div', 'rb-startschleier');
+  hg.setAttribute('aria-hidden', 'true'); schleier.setAttribute('aria-hidden', 'true'); hgBild.alt = ''; hgBild.decoding = 'async';
+  hg.append(hgBild);
+  start.append(hg, schleier, startInhalt);
   karte.hidden = true;
+  if (HG && HG.bild) {
+    start.classList.add('mitbild');
+    RB.bild(HG.bild).fertig.then(i => {
+      if (!i) { start.classList.remove('mitbild'); return; }
+      let src = i.src;
+      if (HG.umfaerben) { try { src = R_.umfaerben(i).toDataURL('image/webp', 0.86); } catch (e) { /* ohne Umfärben */ } }
+      hgBild.onload = () => { hgLage(); hg.classList.add('da'); };
+      hgBild.src = src;
+    });
+  }
+  // Bildausschnitt: flächig (cover); die Fokus-Stelle (kunde.js fokus, Musterfirma: Bildmitte) kommt so nah wie möglich in die
+  // Bildschirmmitte, ohne dass am Rand ein Streifen frei bleibt. Ohne fokus: mittig.
+  function hgLage() {
+    const iw = hgBild.naturalWidth, ih = hgBild.naturalHeight;
+    if (!iw || start.hidden) return;
+    const bw = hg.clientWidth, bh = hg.clientHeight, s = Math.max(bw / iw, bh / ih), dw = iw * s, dh = ih * s;
+    const f = (HG && HG.fokus) || [0.5, 0.5];
+    const pos = (box, d, fk) => d - box < 1 ? 0.5 : Math.max(0, Math.min(1, (d * fk - box / 2) / (d - box)));
+    hgBild.style.objectPosition = (pos(bw, dw, f[0]) * 100).toFixed(2) + '% ' + (pos(bh, dh, f[1]) * 100).toFixed(2) + '%';
+  }
+
+  // ---------- Display als LCD-Raster ----------
+  // Inhalt klein (ein Bildpunkt je Rasterpunkt) auf eine Leinwand zeichnen, ohne Glättung vergrößern, dunkle Rasterlinien
+  // dazwischen. Rasterpunkt in ganzen Gerätepixeln (devicePixelRatio), damit er auf jedem Gerät scharf und gleich groß ist.
+  const DISPLAY_TITEL_SPALTEN = 82, DISPLAY_ZEILE_SPALTEN = 110;   // Skizze: 330 px breit, 4 px bzw. 3 px je Punkt (Bestwert ggf. feiner)
+  function rasterBild(c, breite, spalten, zeilen, malen, mindestens) {
+    const dpr = Math.min(3, devicePixelRatio || 1);
+    let z = Math.max(2, Math.round(breite / spalten * dpr));   // Gerätepixel je Rasterpunkt
+    if (mindestens && Math.floor(breite * dpr / z) < mindestens) z = Math.max(2, Math.floor(breite * dpr / mindestens));   // Text passt ganz hinein
+    const sp = Math.max(8, Math.floor(breite * dpr / z));
+    const k = document.createElement('canvas'); k.width = sp; k.height = zeilen;
+    const g = k.getContext('2d');
+    malen(g, sp, zeilen);
+    // Rasterpunkte eher „an“ oder „aus“ wie bei einem LCD (ein weicher Übergang bleibt für die Lesbarkeit)
+    const d = g.getImageData(0, 0, sp, zeilen), p = d.data;
+    for (let i = 3; i < p.length; i += 4) p[i] = Math.max(0, Math.min(255, (p[i] - 40) * 1.5));
+    g.putImageData(d, 0, 0);
+    c.width = sp * z; c.height = zeilen * z;
+    c.style.width = (sp * z / dpr) + 'px'; c.style.height = (zeilen * z / dpr) + 'px';
+    const o = c.getContext('2d');
+    o.clearRect(0, 0, c.width, c.height);
+    o.fillStyle = 'rgba(255,255,255,.045)';   // nicht leuchtende Punkte, ganz schwach sichtbar
+    o.fillRect(0, 0, c.width, c.height);
+    o.imageSmoothingEnabled = false;
+    o.drawImage(k, 0, 0, c.width, c.height);
+    const lw = Math.max(1, Math.round(z / 4));   // Rasterlinien (Skizze: 1 von 4 Pixeln)
+    for (let x = 1; x <= sp; x++) o.clearRect(x * z - lw, 0, lw, c.height);
+    for (let y = 1; y <= zeilen; y++) o.clearRect(0, y * z - lw, c.width, lw);
+  }
+  function displayText() {
+    const z = tafel.querySelector('.zahl');
+    return {
+      stufe: ('Stufe ' + SP.STUFEN[SP.stufe].name).toLocaleUpperCase('de-DE'),
+      best: ('Bestwert ' + (z ? z.textContent.trim() : '')).replace(/\s+/g, ' ').toLocaleUpperCase('de-DE'),
+    };
+  }
+  let displaySchluessel = '', schriftDa = false;
+  function zeichneDisplay(immer) {
+    const b = display.clientWidth;
+    if (!b) return;
+    const t = displayText(), schluessel = [b, devicePixelRatio, t.stufe, t.best, schriftDa].join('|');
+    if (!immer && schluessel === displaySchluessel) return;
+    displaySchluessel = schluessel;
+    const farbeTitel = R_.toenen(F.haupt, 0.86), farbeZeile = R_.toenen(F.haupt, 0.6);
+    const sv = (window.Schriftzug && Schriftzug.seitenverhaeltnis) || 5.76;
+    const zt = Math.round(DISPLAY_TITEL_SPALTEN * 0.84 / sv) + 6;
+    rasterBild(pxTitel, b, DISPLAY_TITEL_SPALTEN, zt, (g, W, H) => {
+      const sw = W * 0.84, sh = sw / sv;
+      if (window.Schriftzug && Schriftzug.zeichne) Schriftzug.zeichne(g, (W - sw) / 2, (H - sh) / 2, sw, farbeTitel, { linie: true });
+      else RB.punktschrift(g, 'Rohrbruch', 0, 0, W, H, farbeTitel, 'rgba(255,255,255,0)');
+    });
+    // Zeilen in Punktschrift (5×7 wie ein echtes LCD, scharf auf jeder Größe), Stufe fett; passt eine Zeile nicht in
+    // 110 Spalten (Bestwert), wird ihr Raster so viel feiner, dass sie ganz hineinpasst
+    const zeile = (c, text, fett) => {
+      const breite = lcdBreite(text, fett), spalten = Math.max(DISPLAY_ZEILE_SPALTEN, breite + 8);
+      rasterBild(c, b, spalten, 11, (g, W) => lcdText(g, text, Math.floor((W - breite) / 2), 2, farbeZeile, fett), breite + 4);
+    };
+    zeile(pxStufe, t.stufe, true);
+    zeile(pxBest, t.best, false);
+  }
+  // Punktschrift 5×7 (Großbuchstaben, Ziffern, wenige Zeichen); je Zeichen 7 Zeilen à 5 Punkte, schmale Zeichen kürzer
+  const LCD = {};
+  ('A01110100011000111111100011000110001 B11110100011000111110100011000111110 C01110100011000010000100001000101110 ' +
+   'D11100100101000110001100011001011100 E11111100001000011110100001000011111 F11111100001000011110100001000010000 ' +
+   'G01110100011000010111100011000101111 H10001100011000111111100011000110001 I01110001000010000100001000010001110 ' +
+   'J00111000100001000010000101001001100 K10001100101010011000101001001010001 L10000100001000010000100001000011111 ' +
+   'M10001110111010110101100011000110001 N10001100011100110101100111000110001 O01110100011000110001100011000101110 ' +
+   'P11110100011000111110100001000010000 Q01110100011000110001101011001001101 R11110100011000111110101001001010001 ' +
+   'S01111100001000001110000010000111110 T11111001000010000100001000010000100 U10001100011000110001100011000101110 ' +
+   'V10001100011000110001100010101000100 W10001100011000110101101011010101010 X10001100010101000100010101000110001 ' +
+   'Y10001100010101000100001000010000100 Z11111000010001000100010001000011111 Ä01010000000111010001111111000110001 ' +
+   'Ö01010000000111010001100011000101110 Ü01010000001000110001100011000101110 001110100011000110001100011000101110 ' +
+   '100100011000010000100001000010001110 201110100010000100010001000100011111 311111000100010000010000011000101110 ' +
+   '400010001100101010010111110001000010 511111100001111000001000011000101110 600110010001000011110100011000101110 ' +
+   '711111000010001000100010000100001000 801110100011000101110100011000101110 901110100011000101111000010001001100 ' +
+   '/00001000010001000100010001000010000 -00000000000000011111000000000000000').split(' ').forEach(e => {
+    const z = e[0], b = e.slice(1);
+    LCD[z] = { w: 5, p: Array.from({ length: 7 }, (_, y) => b.slice(y * 5, y * 5 + 5)) };
+  });
+  LCD['.'] = { w: 2, p: ['00', '00', '00', '00', '00', '11', '11'] };
+  LCD[':'] = { w: 2, p: ['00', '11', '11', '00', '11', '11', '00'] };
+  LCD[' '] = { w: 3, p: [] };
+  const lcdZeichen = z => LCD[z] || LCD[' '];
+  // fett: jeder Punkt doppelt breit (Zeichen eine Spalte breiter)
+  const lcdBreite = (text, fett) => [...text].reduce((a, z, i) => a + lcdZeichen(z).w + (fett && z !== ' ' ? 1 : 0) + (i ? 1 : 0), 0);
+  function lcdText(g, text, x, y, farbe, fett) {
+    g.fillStyle = farbe;
+    [...text].forEach(z => {
+      const c = lcdZeichen(z);
+      c.p.forEach((reihe, ry) => { for (let rx = 0; rx < reihe.length; rx++) if (reihe[rx] === '1') g.fillRect(x + rx, y + ry, fett ? 2 : 1, 1); });
+      x += c.w + (fett && z !== ' ' ? 1 : 0) + 1;
+    });
+  }
+  if (document.fonts && document.fonts.load) document.fonts.load('700 12px Barlow').then(() => { schriftDa = true; zeichneDisplay(); }).catch(() => {});
 
   function stufeSchreiben() { dstufe.textContent = 'Stufe ' + SP.STUFEN[SP.stufe].name; }
 
   function startLayout() {
     if (start.hidden) return;
     start.classList.toggle('quer', innerWidth > innerHeight * 1.15 && innerHeight < 620);
-    const dw = display.getBoundingClientRect().width;
-    if (dw) display.style.setProperty('--dw', dw + 'px');
-    zeichnePunkte();
-  }
-  function zeichnePunkte() {
-    const { g, w, h } = RB.leinwand(punkte);
-    g.clearRect(0, 0, w, h);
-    const farbe = R_.toenen(F.haupt, 0.62);   // helle Display-Farbe
-    // Schriftzug „Rohrbruch!“ (../schrift/schriftzug.js) mit leichtem Leuchten wie ein Display; ohne Datei die Punktschrift
-    if (window.Schriftzug && Schriftzug.zeichne) {
-      const sv = Schriftzug.seitenverhaeltnis || 5.76, b = Math.min(w * 0.92, h * sv * 0.96), hb = b / sv;
-      g.save(); g.shadowColor = R_.mitAlpha(F.haupt, 0.9); g.shadowBlur = Math.max(4, hb * 0.12);
-      Schriftzug.zeichne(g, (w - b) / 2, (h - hb) / 2, b, farbe, { linie: true });
-      g.restore();
-    } else RB.punktschrift(g, 'Rohrbruch', 0, 0, w, h, farbe, 'rgba(255,255,255,.05)');
+    zeichneDisplay();
+    hgLage();
   }
   if (window.ResizeObserver) new ResizeObserver(() => { if (!start.hidden) startLayout(); }).observe(display);
   new MutationObserver(() => { if (!start.hidden) { stufeSchreiben(); requestAnimationFrame(startLayout); } }).observe(start, { attributes: true, attributeFilter: ['hidden'] });
+  // Bestwert schreibt der Rahmen beim Zeigen des Startbilds – Display dann neu zeichnen
+  new MutationObserver(() => { if (!start.hidden) zeichneDisplay(); }).observe(tafel, { childList: true, subtree: true, characterData: true });
   addEventListener('resize', () => { startLayout(); endLayout(); });
   stufeSchreiben();
   requestAnimationFrame(startLayout);
+  RB.startbildLage = () => ({ hg: hgBild.style.objectPosition, display: display.clientWidth });   // Testhilfe
 
   // ---------- Endbild ----------
   const ende = $('#endSchirm'), ek = ende.querySelector('.karte');

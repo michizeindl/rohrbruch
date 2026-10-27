@@ -9,7 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Rohrbruch">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Rohrbruch – Muster Haustechnik</title>
-<!-- Startseite „Heizungsverteiler“ (Phase 4, MZ 24.10.2026: Layout 3). App-Icon Variante 2 (gebrochenes o mit Firmenzeichen),
+<!-- Startseite mit Stufenwahl „Figur im Lichtkreis“ (MZ, 27.10.2026; vorher Heizungsverteiler, archiviert in
+     Material/Archiv/startseite-verteiler-2026-10-27/). App-Icon Variante 2 (gebrochenes o mit Firmenzeichen),
      Intro „Das Rohr gibt nach“, Musik der Sammlung. Aufbau: start/start.css, start/start.js, start/intro.js -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
@@ -41,9 +42,20 @@
     <h1 class="schriftzug ein" id="schriftzug" aria-label="Rohrbruch!"></h1>
     <!-- Gesamt-Bestwert ersatzlos entfernt (MZ, 25.10.2026, bewusste Ausnahme von der Regel „Gesamt-Bestwert oben“) -->
   </section>
-  <section class="verteiler" id="verteiler">
-    <svg class="rohre ein" id="rohre" aria-hidden="true"></svg>
-    <nav class="stufen" id="stufen" aria-label="Stufe wählen"></nav>
+  <!-- Stufenwahl „Figur im Lichtkreis“ (MZ, 27.10.2026, Skizze B; Grad-Pille links neben der Figur = B1): immer eine Stufe,
+       Pfeile/Wischen/Pfeiltasten wechseln, „An die Arbeit“ oder Antippen der Figur startet sie -->
+  <section class="wahl" id="wahl" aria-roledescription="Karussell" aria-label="Stufe wählen">
+    <div class="wahl-name stapel ein" id="wahlName"></div>
+    <div class="buehne ein" id="buehne">
+      <div class="folien" id="folien"></div>
+      <div class="grad-stapel stapel" id="gradStapel"></div>
+      <button class="pfeil zurueck" id="pfeilZurueck" type="button" aria-label="Vorherige Stufe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6"/></svg></button>
+      <button class="pfeil vor" id="pfeilVor" type="button" aria-label="Nächste Stufe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="wahl-best stapel ein" id="wahlBest"></div>
+    <a class="los ein" id="losKnopf" href="shk-adventure/#stufe=azubi">An die Arbeit</a>
+    <div class="punkte ein" id="punkte" aria-hidden="true"><i></i><i></i><i></i></div>
+    <p class="nur-vorlesen" id="ansage" aria-live="polite"></p>
   </section>
   <!-- Einsatzbuch-Ansicht im Spielordner (#buch), „Zum Menü“ führt hierher zurück -->
   <a class="buch ein" id="buchKnopf" href="shk-adventure/#buch">
@@ -53,6 +65,8 @@
   <footer class="fuss ein" id="fuss"></footer>
 </div>
 <script src="schrift/schriftzug.js"></script>
+<!-- Figuren der Stufen (Maße, Brustfläche fürs Firmenzeichen) – dieselben Daten wie im Zwischenbild des Spiels -->
+<script src="shk-adventure/stufenfiguren.js"></script>
 <script src="start/start.js"></script>
 <script src="start/intro.js"></script>
 <script>

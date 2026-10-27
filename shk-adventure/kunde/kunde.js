@@ -58,6 +58,13 @@ window.KUNDE = {
     'bilder/firma-5.webp', 'bilder/firma-6.webp', 'bilder/firma-7.webp', 'bilder/firma-8.webp'],
   firmenbilderUmfaerben: true,
 
+  // Hintergrund des Startbilds (Bildschirm nach dem Antippen einer Stufe, MZ 27.10.2026): Bild einer Anlage, flächig, leicht
+  // weichgezeichnet und aufgehellt. Beim Kunden ein eigenes Foto (Querformat, ca. 1024×683, z. B. 'kunde/startbild.webp').
+  // umfaerben: true nur für gestaltete Bilder mit #00FF00-Flächen (Musterfirma: Haustür), nie für echte Fotos.
+  // fokus: Stelle im Bild (Anteile x, y), die möglichst in die Bildschirmmitte kommt (Musterfirma: Bildmitte – Hauswand,
+  // Tür, Lüfter angeschnitten, MZ 27.10.2026); fehlt sie, wird das Bild mittig gezeigt. startbildHintergrund: null = einfarbige Fläche in Hausfarbe.
+  startbildHintergrund: { bild: 'bilder/startbild-hg.webp', umfaerben: true, fokus: [0.5, 0.5] },
+
   // Kontaktdaten im Footer (Startseite, MZ 24.10.2026). Datenschutz/Impressum nur unterstrichen, nichts verlinkt.
   // vor jedem „–“ ein geschütztes Leerzeichen (\u00a0), damit der Strich nie am Zeilenanfang steht (die Startseite ergänzt es sonst selbst)
   kontakt: 'Muster Haustechnik\u00a0– Am Mühlbach 12\u00a0– 94999 Musterstadt\u00a0– Tel. 089 99998 120',
